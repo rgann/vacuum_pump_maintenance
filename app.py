@@ -59,12 +59,19 @@ try:
     # Enable SQLAlchemy echo for debugging
     app.config['SQLALCHEMY_ECHO'] = True
 
-    # Set a longer timeout for database operations
-    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-        'pool_timeout': 60,
-        'pool_recycle': 3600,
-        'pool_pre_ping': True
-    }
+    # Set connection pool options - different for PostgreSQL and SQLite
+    if os.environ.get('DATABASE_URL'):
+        # PostgreSQL-specific options
+        app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+            'pool_timeout': 60,
+            'pool_recycle': 3600,
+            'pool_pre_ping': True
+        }
+    else:
+        # SQLite-specific options
+        app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+            'pool_pre_ping': True
+        }
 
     # Disable track modifications to improve performance
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False

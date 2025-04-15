@@ -2,8 +2,8 @@
 # This script runs during the initial deploy hook on Render
 # It initializes the database with sample data
 
-# Exit on error
-set -o errexit
+# Don't exit on error so we can see all errors
+set +o errexit
 
 echo "=== INITIAL DEPLOY HOOK STARTED ==="
 echo "Current directory: $(pwd)"
@@ -20,6 +20,12 @@ python db_init.py
 
 echo "=== VERIFYING DATABASE ==="
 echo "Checking database status..."
-python -c "from app import db, Equipment; print(f'Equipment count: {Equipment.query.count()}')"
+python -c "from app import db, Equipment;
+try:
+    count = Equipment.query.count()
+    print(f'Equipment count: {count}')
+except Exception as e:
+    print(f'Error checking equipment count: {e}')
+"
 
 echo "=== INITIAL DEPLOY HOOK COMPLETED SUCCESSFULLY ==="

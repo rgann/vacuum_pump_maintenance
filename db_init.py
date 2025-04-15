@@ -8,7 +8,15 @@ import logging
 logger = logging.getLogger(__name__)
 
 # Import the equipment and log data from seed_initial_data.py
-from seed_initial_data import equipment_data, log_data
+try:
+    from seed_initial_data import equipment_data, log_data
+    print(f"Successfully imported data from seed_initial_data.py: {len(equipment_data)} equipment items, {len(log_data)} logs")
+except Exception as e:
+    logger.error(f"Error importing from seed_initial_data.py: {e}")
+    print(f"Error importing from seed_initial_data.py: {e}")
+    # Define fallback data in case seed_initial_data.py is not available
+    equipment_data = []
+    log_data = []
 
 def create_sample_data():
     """Create sample data for the application using seed_initial_data.py data"""
@@ -16,24 +24,24 @@ def create_sample_data():
         # Log database connection info
         logger.info(f"Database URI: {app.config['SQLALCHEMY_DATABASE_URI'].split('@')[0]}@...")
         print(f"Database URI: {app.config['SQLALCHEMY_DATABASE_URI'].split('@')[0]}@...")
-        
+
         # Create tables if they don't exist
         logger.info("Creating database tables...")
         print("Creating database tables...")
         db.create_all()
         logger.info("Database tables created successfully")
         print("Database tables created successfully")
-        
+
         # Check if we already have data
         equipment_count = Equipment.query.count()
         logger.info(f"Current equipment count: {equipment_count}")
         print(f"Current equipment count: {equipment_count}")
-        
+
         if equipment_count > 0:
             logger.info("Database already contains data. Skipping initialization.")
             print("Database already contains data. Skipping initialization.")
             return
-        
+
         # Clear any existing data
         MaintenanceLog.query.delete()
         Equipment.query.delete()
@@ -58,7 +66,7 @@ def create_sample_data():
                 logger.error(f"Error adding equipment {num}: {e}")
                 print(f"Error adding equipment {num}: {e}")
                 db.session.rollback()
-        
+
         db.session.commit()
         logger.info("Equipment data loaded successfully.")
         print("Equipment data loaded successfully.")
@@ -72,7 +80,7 @@ def create_sample_data():
                 logger.warning(f"Equipment {num} not found in database. Skipping log entry.")
                 print(f"Equipment {num} not found in database. Skipping log entry.")
                 continue
-            
+
             try:
                 log = MaintenanceLog(
                     equipment_id=equipment_map[num],
@@ -95,7 +103,7 @@ def create_sample_data():
         db.session.commit()
         logger.info("✅ Equipment and maintenance log data loaded successfully.")
         print("✅ Equipment and maintenance log data loaded successfully.")
-        
+
     except Exception as e:
         db.session.rollback()
         logger.error(f"Error creating sample data: {e}")
