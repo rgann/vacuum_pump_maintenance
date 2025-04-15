@@ -792,21 +792,36 @@ def chart_data():
         }
 
         # Calculate Hall of Fame scores
-        # Get all pump owners
-        pump_owners = db.session.query(Equipment.pump_owner).distinct().all()
-        pump_owners = [owner[0] for owner in pump_owners if owner[0] is not None and owner[0].strip() != '']
+        # Get all pump owners, excluding those who only own scroll pumps or spare equipment
+        eligible_equipment = Equipment.query.filter(
+            (Equipment.oil_type.is_(None) | ~Equipment.oil_type.ilike('%scroll%')),
+            ~Equipment.equipment_name.ilike('%spare%')
+        ).all()
 
-        # Calculate scores for each pump owner
+        # Get unique eligible pump owners
+        eligible_owners = set()
+        for equip in eligible_equipment:
+            if equip.pump_owner and equip.pump_owner.strip() != '':
+                eligible_owners.add(equip.pump_owner)
+
+        # Calculate scores for each eligible pump owner
         hall_of_fame = []
-        for owner in pump_owners:
-            # Count equipment owned by this owner
-            owned_equipment_count = Equipment.query.filter(Equipment.pump_owner == owner).count()
+        for owner in eligible_owners:
+            # Count eligible equipment owned by this owner (excluding scroll and spare)
+            owned_equipment_count = Equipment.query.filter(
+                Equipment.pump_owner == owner,
+                (Equipment.oil_type.is_(None) | ~Equipment.oil_type.ilike('%scroll%')),
+                ~Equipment.equipment_name.ilike('%spare%')
+            ).count()
+
             if owned_equipment_count == 0:
                 continue
 
-            # Get all maintenance logs by this owner
+            # Get all maintenance logs by this owner for eligible equipment only
             owner_logs = MaintenanceLog.query.join(Equipment).filter(
-                MaintenanceLog.user_name == owner
+                MaintenanceLog.user_name == owner,
+                (Equipment.oil_type.is_(None) | ~Equipment.oil_type.ilike('%scroll%')),
+                ~Equipment.equipment_name.ilike('%spare%')
             ).all()
 
             # Group logs by week to calculate weekly scores

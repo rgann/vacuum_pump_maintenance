@@ -54,6 +54,15 @@ body {
 /* Larger card titles for dashboard */
 .card-title-large {
     font-size: 1rem !important;
+    text-transform: uppercase;
+    color: var(--neon-blue);
+    text-shadow: 0 0 5px rgba(123, 147, 255, 0.5);
+}
+
+/* Make all card headers uppercase */
+.card-header h1, .card-header h2, .card-header h3,
+.card-header h4, .card-header h5, .card-header h6 {
+    text-transform: uppercase;
 }
 
 h1, h2, h3, h4 {
@@ -268,6 +277,30 @@ main {
 /* Tables */
 .table {
     color: var(--text-primary);
+}
+
+/* Wrap all tables in cards */
+.table-responsive {
+    background-color: var(--dark-surface);
+    border-radius: 0.5rem;
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(0, 0, 0, 0.15);
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+}
+
+.table-responsive table {
+    margin-bottom: 0;
+}
+
+/* Add hover effect to table rows */
+.table tbody tr {
+    transition: all 0.3s ease;
+}
+
+.table tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 0.15rem 0.5rem 0 rgba(0, 0, 0, 0.1);
 }
 
 .table-bordered {
@@ -952,6 +985,16 @@ td.temp-col {
     padding: 0.5rem !important;
 }
 
+.hall-of-fame-title {
+    text-align: center;
+    font-size: 1.2rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+    color: #FFFF00; /* Yellow color */
+    text-shadow: 0 0 10px #800080; /* Purple glow */
+    letter-spacing: 2px;
+}
+
 .hall-of-fame-table {
     margin-bottom: 0;
     background-color: #000000;
@@ -1024,12 +1067,32 @@ td.temp-col {
 .dashboard-grid {
     display: grid;
     grid-template-columns: 1fr 2fr;
-    grid-template-rows: auto 1fr;
+    grid-template-rows: auto auto;
     grid-template-areas:
         "maintenance-rate temperature-chart"
         "hall-of-fame temperature-chart";
     gap: 1rem;
     margin-bottom: 1rem;
+    max-height: 90vh; /* Limit height to avoid scrolling */
+    overflow: hidden;
+}
+
+/* Limit card heights to fit in viewport */
+.card {
+    max-height: 85vh;
+}
+
+.temperature-chart-container .card {
+    max-height: 85vh;
+}
+
+.hall-of-fame-container .card {
+    max-height: 50vh;
+}
+
+.chart-area {
+    max-height: 60vh;
+    overflow: hidden;
 }
 
 .maintenance-rate-container {
