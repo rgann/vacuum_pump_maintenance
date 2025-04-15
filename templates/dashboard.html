@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - Vacuum Pump Maintenance{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-1 pb-1 mb-2">
+    <h1 class="h2">Dashboard</h1>
+</div>
+
+<div class="dashboard-grid">
+    <!-- Maintenance Rate Card-->
+    <div class="maintenance-rate-container">
+        <div class="card maintenance-rate-card shadow h-100">
+            <div class="card-body">
+                <div class="text-xs font-weight-bold text-success text-uppercase mb-3">
+                    Maintenance Rate
+                </div>
+                <div class="maintenance-rate-value">{{ maintenance_rate|round(1) }}%</div>
+                <div class="d-flex justify-content-end mt-0">
+                    <i class="bi bi-check-circle text-gray-300"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Temperature Chart -->
+    <div class="temperature-chart-container">
+        <div class="card shadow h-100">
+            <div class="card-header py-2 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold card-title-large">Pump Temperature Trends</h6>
+                <button class="btn btn-sm btn-outline-secondary btn-filter" id="toggleFilterBtn">
+                    <i class="bi bi-funnel-fill"></i> Filter
+                </button>
+            </div>
+            <div class="card-body">
+                <div id="tempChartFilters" class="filter-controls mb-3" style="display: none;">
+                    <span class="filter-label">Select Equipment:</span>
+                    <div id="equipmentFilters" class="d-flex flex-wrap gap-2">
+                    </div>
+                </div>
+                <div class="chart-area">
+                    <canvas id="temperatureChart"></canvas>
+                </div>
+                <div class="temp-chart-legend mt-3" id="tempChartLegend">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Service Distribution -->
+    <div class="service-chart-container">
+        <div class="card shadow h-100">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold card-title-large">Service Distribution</h6>
+            </div>
+            <div class="card-body service-chart-body">
+                <div class="chart-pie service-chart-wrapper">
+                    <canvas id="serviceChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/temperature_chart.js') }}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const toggleFilterBtn = document.getElementById('toggleFilterBtn');
+        const tempChartFilters = document.getElementById('tempChartFilters');
+
+        if (toggleFilterBtn && tempChartFilters) {
+            toggleFilterBtn.addEventListener('click', function() {
+                tempChartFilters.style.display = tempChartFilters.style.display === 'none' ? 'block' : 'none';
+                this.classList.toggle('active');
+            });
+        }
+
+        fetch('/api/chart-data')
+            .then(response => response.json())
+            .then(data => {
+                setupTemperatureChart(data);
+                setupServiceChart(data);
+            })
+            .catch(error => console.error('Error loading chart data:', error));
+    });
+
+    // The setupTemperatureChart function is now loaded from temperature_chart.js
+
+    // The setupServiceChart function is now loaded from temperature_chart.js
+</script>
+{% endblock %}

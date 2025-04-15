@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+
+{% block title %}Add Equipment{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3">
+    <h1 class="h2">Add New Equipment</h1>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <form method="post">
+                    <div class="mb-3">
+                        <label for="equipment_id" class="form-label">Equipment ID</label>
+                        <input type="number" class="form-control" id="equipment_id" name="equipment_id"
+                               value="{{ next_equipment_id}}" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label for="equipment_name" class="form-label">Equipment</label>
+                        <input type="text" class="form-control" id="equipment_name" name="equipment_name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="pump_model" class="form-label">Pump Model</label>
+                        <input type="text" class="form-control" id="pump_model" name="pump_model" list="pump_model_options">
+                        <datalist id="pump_model_options">
+                        </datalist>
+                    </div>
+                    <div class="mb-3">
+                        <label for="oil_type" class="form-label">Oil Type/Scroll</label>
+                        <input type="text" class="form-control" id="oil_type" name="oil_type" list="oil_type_options">
+                        <datalist id="oil_type_options">
+                        </datalist>
+                    </div>
+                    <div class="mb-3">
+                        <label for="pump_owner" class="form-label">Pump Owner</label>
+                        <input type="text" class="form-control" id="pump_owner" name="pump_owner" list="pump_owner_options">
+                        <datalist id="pump_owner_options">
+                        </datalist>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Notes</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="status" class="form-label">Status</label>
+                        <select class="form-select" id="status" name="status">
+                            <option value="active" selected>Active</option>
+                            <option value="inactive">Inactive</option>
+                            <option value="maintenance">Under Maintenance</option>
+                            <option value="spare">Spare</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                    <a href="{{ url_for('equipment_list') }}" class="btn btn-secondary">Cancel</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- fetchDropdownOptions function now centralized in app.js -->
+{% endblock %}

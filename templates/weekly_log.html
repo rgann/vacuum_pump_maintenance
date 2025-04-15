@@ -1,0 +1,196 @@
+<!-- templates/weekly_log.html -->
+{% extends 'base.html' %}
+
+{% block title %}Weekly Maintenance Log{% endblock %}
+
+{% block content %}
+<style>
+    .table-container {
+        position: relative !important;
+        overflow-x: auto !important;
+        overflow-y: auto !important;
+        max-height: calc(100vh - 150px) !important;
+        border: 1px solid #000000 !important;
+        margin-top: 20px !important;
+    }
+
+    .maintenance-table {
+        border-collapse: separate !important;
+        border-spacing: 0 !important;
+        width: 100% !important;
+        min-width: 100% !important;
+    }
+
+    .maintenance-table > thead > tr > th:first-child,
+    .maintenance-table > tbody > tr > td:first-child {
+        position: sticky !important;
+        left: 0 !important;
+        min-width: 200px !important;
+        z-index: 100 !important;
+        box-shadow: 5px 0 8px rgba(0,0,0,0.3) !important;
+        -webkit-backdrop-filter: blur(0) !important;
+        backdrop-filter: blur(0) !important;
+        opacity: 1 !important;
+        border-right: none;
+    }
+
+    .maintenance-table > thead > tr > th {
+        position: sticky !important;
+        top: 0 !important;
+        z-index: 10 !important;
+    }
+
+    .maintenance-table > thead > tr > th:first-child {
+        z-index: 200 !important;
+    }
+
+    .date-col { min-width: 160px !important; }
+    .employee-col { min-width: 180px !important; }
+    .checkbox-col {
+        min-width: 100px !important;
+        text-align: center !important;
+    }
+    .temp-col {
+        min-width: 100px !important;
+        text-align: center !important;
+    }
+    .service-col { min-width: 180px !important; }
+    .notes-col { min-width: 200px !important; }
+    .actions-col { min-width: 100px !important; }
+
+    .form-control-wide { width: 100% !important; }
+    .temp-box { width: 80px !important; }
+</style>
+
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3">
+    <h1 class="h2">Weekly Maintenance Log: {{ work_week }}</h1>
+</div>
+
+<div class="table-container">
+    <table class="table table-bordered maintenance-table">
+        <thead>
+            <tr>
+                <th style="position: sticky !important; left: 0 !important; z-index: 200 !important; font-weight: bold !important;
+              ; box-shadow: 5px 0 8px rgba(0,0,0,0.3) !important;
+               border-right:none;">Equipment</th>
+                <th class="date-col">Check Date</th>
+                <th class="employee-col">Employee</th>
+                <th class="checkbox-col">Oil Level OK</th>
+                <th class="checkbox-col">Oil Condition OK</th>
+                <th class="checkbox-col">Oil Filter OK</th>
+                <th class="temp-col">Pump Temp</th>
+                <th class="service-col">Service</th>
+                <th class="notes-col">Service Notes</th>
+                <th class="actions-col">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for equipment in equipment_list %}
+            {% set log = existing_logs.get(equipment.equipment_id) %}
+            <tr>
+                <form method="post" action="{{ url_for('save_equipment_log', equipment_id=equipment.equipment_id, work_week=work_week) }}">
+                    <input type="hidden" name="equipment_id" value="{{ equipment.equipment_id }}">
+
+                    <td style="position: sticky !important; left: 0 !important; z-index: 100 !important;
+                         box-shadow: 5px 0 8px rgba(0,0,0,0.3) !important;
+                         border-right:none">
+                        {{ equipment.equipment_name }}
+                    </td>
+                    <td class="date-col">
+                        <input type="date" class="form-control" name="check_date"
+                               value="{{ log.check_date.strftime('%Y-%m-%d') if log and log.check_date else current_date }}" required>
+                    </td>
+                    <td class="employee-col">
+                        <input type="text" class="form-control form-control-wide" name="user_name"
+                               value="{{ log.user_name if log and log.user_name else '' }}">
+                    </td>
+                    <td class="checkbox-col">
+                        <div class="form-check d-flex justify-content-center">
+                            <input class="form-check-input" type="checkbox"
+                                   name="oil_level_ok"
+                                   {% if log and log.oil_level_ok %}checked{% endif %}>
+                        </div>
+                    </td>
+                    <td class="checkbox-col">
+                        <div class="form-check d-flex justify-content-center">
+                            <input class="form-check-input" type="checkbox"
+                                   name="oil_condition_ok"
+                                   {% if log and log.oil_condition_ok %}checked{% endif %}>
+                        </div>
+                    </td>
+                    <td class="checkbox-col">
+                        <div class="form-check d-flex justify-content-center">
+                            <input class="form-check-input" type="checkbox"
+                                   name="oil_filter_ok"
+                                   {% if log and log.oil_filter_ok %}checked{% endif %}>
+                        </div>
+                    </td>
+                    <td class="temp-col">
+                        <input type="number" class="form-control temp-box"
+                               name="pump_temp"
+                               step="0.1"
+                               value="{{ log.pump_temp if log and log.pump_temp }}">
+                    </td>
+                    <td class="service-col">
+                        <select class="form-select" name="service">
+                            <option value="None Required" {% if not log or log.service == 'None Required' %}selected{% endif %}>None Required</option>
+                            <option value="Add Oil" {% if log and log.service == 'Add Oil' %}selected{% endif %}>Add Oil</option>
+                            <option value="Drain & Replace Oil" {% if log and log.service == 'Drain & Replace Oil' %}selected{% endif %}>Drain & Replace Oil</option>
+                        </select>
+                    </td>
+                    <td class="notes-col">
+                        <input type="text" class="form-control form-control-wide"
+                               name="service_notes"
+                               value="{{ log.service_notes if log and log.service_notes }}">
+                    </td>
+                    <td class="actions-col">
+                        {% if log %}
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-floppy"></i>
+                                </button>
+                                <a href="{{ url_for('delete_maintenance_log', log_id=log.log_id) }}"
+                                   class="btn btn-danger"
+                                   onclick="return confirmDelete(event, 'Are you sure you want to delete this maintenance log?')">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </div>
+                        {% else %}
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-floppy"></i>
+                                </button>
+                            </div>
+                        {% endif %}
+                    </td>
+                </form>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const today = new Date().toISOString().split('T')[0];
+        const emptyDateFields = document.querySelectorAll('input[type="date"]:not([value])');
+        emptyDateFields.forEach(field => {
+            field.value = today;
+        });
+
+        function updateStickyColumnColors() {
+            document.querySelectorAll('.maintenance-table > tbody > tr').forEach((row, index) => {
+                const bgColor = index % 2 ? '#000000' : '#000000';
+                const stickyCell = row.querySelector('td:nth-child(1)');
+                if (stickyCell) {
+                    stickyCell.style.backgroundColor = bgColor;
+                    stickyCell.style.borderRight = '2px solid #aaa';
+                }
+            });
+        }
+
+        updateStickyColumnColors();
+        document.querySelector('.table-container').addEventListener('scroll', updateStickyColumnColors);
+    });
+</script>
+{% endblock %}

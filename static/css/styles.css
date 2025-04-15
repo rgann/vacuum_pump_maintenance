@@ -1,0 +1,944 @@
+/* Dark Theme with Pastel Neon Colors */
+:root {
+    --dark-bg: #121212;
+    --dark-surface: #1e1e1e;
+    --dark-elevated: #252525;
+    --dark-border: #333333;
+
+    /* Pastel Neon Color Scheme */
+    --neon-blue: #7b93ff;
+    --neon-green: #7cffcb;
+    --neon-pink: #ff7bd1;
+    --neon-purple: #cb7bff;
+    --neon-yellow: #fff07b;
+    --neon-cyan: #7be9ff;
+
+    /* Arcade Font */
+    --arcade-font: 'Press Start 2P', cursive;
+
+    --text-primary: rgba(255, 255, 255, 0.87);
+    --text-secondary: rgba(255, 255, 255, 0.6);
+    --text-disabled: rgba(255, 255, 255, 0.38);
+}
+
+/* Global Styles */
+body {
+    background-color: var(--dark-bg);
+    color: var(--text-primary);
+    padding-top: 40px; /* Reduced padding-top */
+    min-height: 100vh;
+    transition: all 0.3s ease;
+    font-family: var(--arcade-font);
+    letter-spacing: -0.05em;
+    line-height: 1.5;
+}
+
+/* Apply arcade font to all elements */
+*, button, input, select, textarea, .btn, .form-control, .form-select, .nav-link, h1, h2, h3, h4, h5, h6, .card-title, .table th, .table td {
+    font-family: var(--arcade-font) !important;
+}
+
+/* Adjust font sizes for better readability with arcade font */
+.table td, .table th {
+    font-size: 0.6rem !important;
+}
+
+.btn, .form-control, .form-select {
+    font-size: 0.7rem !important;
+}
+
+.nav-link, .card-title, h5, h6 {
+    font-size: 0.8rem !important;
+}
+
+/* Larger card titles for dashboard */
+.card-title-large {
+    font-size: 1rem !important;
+}
+
+h1, h2, h3, h4 {
+    font-size: 1rem !important;
+}
+
+.small, small, .form-label {
+    font-size: 0.6rem !important;
+}
+
+/* Adjust spacing for arcade font */
+.card-body, .card-header {
+    padding: 0.5rem !important;
+}
+
+/* Navbar */
+.navbar {
+    background-color: var(--dark-elevated) !important;
+    border-bottom: 1px solid var(--dark-border);
+    padding: 0.3rem 1rem; /* Reduced padding */
+    height: 46px; /* Reduced height */
+}
+
+.navbar-brand {
+    color: var(--neon-blue) !important;
+    font-weight: 600;
+}
+
+.navbar-dark .navbar-toggler {
+    border-color: var(--dark-border);
+}
+
+/* Sidebar - Static with text appearing on hover */
+.sidebar {
+    position: fixed;
+    top: 56px;
+    bottom: 0;
+    left: 0;
+    z-index: 100;
+    padding: 0;
+    box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
+    width: 60px;
+    background-color: var(--dark-elevated);
+}
+
+.sidebar .nav-link {
+    padding: 0.75rem 1rem;
+    color: rgba(255, 255, 255, 0.75);
+    display: flex;
+    align-items: center;
+    position: relative;
+    white-space: nowrap;
+    transition: all 0.3s ease;
+}
+
+.sidebar .nav-link:hover {
+    color: rgba(255, 255, 255, 1);
+    background-color: rgba(255, 255, 255, 0.1);
+    text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+}
+
+.sidebar .nav-link i.bi {
+    font-size: 1.2rem;
+    width: 24px;
+    text-align: center;
+    filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.3));
+    transition: all 0.3s ease;
+}
+
+/* Removed duplicate rule */
+
+.sidebar .nav-link .nav-text {
+    position: absolute;
+    left: 60px;
+    background-color: transparent;
+    padding: 0.5rem 1rem;
+    border-radius: 0;
+    opacity: 0;
+    transform: translateX(-10px);
+    transition: all 0.3s ease;
+    visibility: hidden;
+    box-shadow: none;
+    white-space: nowrap;
+    pointer-events: none;
+    color: var(--neon-blue);
+    font-weight: 500;
+    text-shadow: 0 0 5px rgba(123, 147, 255, 0.7);
+    z-index: 1000;
+}
+
+.sidebar .nav-link:hover .nav-text {
+    opacity: 1;
+    transform: translateX(0);
+    visibility: visible;
+}
+
+.sidebar .nav-link.active {
+    color: #fff;
+    border-left: 4px solid var(--neon-blue);
+    padding-left: calc(1rem - 4px);
+}
+
+.sidebar-sticky {
+    position: relative;
+    top: 0;
+    height: calc(100vh - 46px); /* Updated to match new navbar height */
+    padding-top: 0.3rem; /* Reduced padding */
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+/* Main Content */
+main {
+    transition: all 0.3s ease;
+    padding: 0.5rem; /* Reduced padding */
+    margin-left: 60px;
+    width: auto;
+    max-width: none;
+    overflow-x: hidden;
+    box-sizing: border-box;
+}
+/* Fix for Bootstrap container-fluid */
+.container-fluid {
+    padding-left: 0;
+    padding-right: 0;
+    overflow-x: hidden;
+}
+
+/* Fix row margins */
+.row {
+    margin-left: 0;
+    margin-right: 60px;
+}
+
+/* Cards */
+.card {
+    background-color: rgba(40, 40, 40, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    margin-bottom: 0;
+    transition: transform 0.2s, box-shadow 0.2s;
+    position: relative;
+    overflow: hidden;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.75rem 1.5rem rgba(0, 0, 0, 0.2);
+}
+
+.card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--neon-blue), var(--neon-green), var(--neon-pink), var(--neon-purple));
+    opacity: 0.7;
+    box-shadow: 0 0 10px rgba(123, 147, 255, 0.5);
+}
+
+.card-header {
+    background-color: rgba(30, 30, 30, 0.6);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    font-weight: 600;
+    color: var(--text-primary);
+    text-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
+    padding: 0.5rem 0.75rem; /* Reduced padding */
+}
+
+.card-body {
+    padding: 0.75rem;
+    flex: 1 1 auto; /* Make card body fill available space */
+}
+
+/* Special styling for dashboard cards that need flex layout */
+.dashboard-grid .card-body,
+.service-chart-body {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Dashboard Cards */
+.border-left-primary {
+    border-left: 4px solid var(--neon-blue) !important;
+}
+
+.border-left-success {
+    border-left: 4px solid var(--neon-green) !important;
+}
+
+.text-primary {
+    color: var(--neon-blue) !important;
+}
+
+.text-success {
+    color: var(--neon-green) !important;
+}
+
+.text-gray-800 {
+    color: var(--text-primary) !important;
+}
+
+.text-gray-300 {
+    color: var(--text-secondary) !important;
+}
+
+/* Tables */
+.table {
+    color: var(--text-primary);
+}
+
+.table-bordered {
+    border-color: var(--dark-border);
+}
+
+.table th {
+    background-color: var(--dark-elevated);
+    border-color: var(--dark-border);
+    color: var(--text-secondary);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 0.5px;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 10 !important;
+}
+
+.table td {
+    border-color: var(--dark-border);
+}
+
+.table-bordered td, .table-bordered th {
+    border-color: var(--dark-border);
+}
+
+.table-responsive {
+    overflow-x: auto;
+    width: 100%;
+    max-height: calc(100vh - 180px); /* Increased height for records */
+    overflow-y: auto;
+}
+
+.table th, .table td {
+    text-align: center !important;
+    vertical-align: middle !important;
+}
+
+/* Sticky table header */
+.table-responsive thead th {
+    position: sticky;
+    top: 0;
+    background-color: var(--dark-surface);
+    z-index: 1;
+}
+
+/* Consistent text color for all rows */
+.table tbody tr td {
+    color: var(--text-primary) !important;
+}
+
+/* Equipment column styling */
+.table td a {
+    color: var(--neon-blue) !important;
+    text-decoration: none !important;
+    transition: color 0.2s ease;
+}
+
+.table td a:hover {
+    color: var(--neon-blue) !important;
+    text-shadow: 0 0 5px rgba(123, 147, 255, 0.5);
+}
+
+/* Add glows to colored elements */
+.bi-check-circle-fill.text-success {
+    filter: drop-shadow(0 0 3px rgba(124, 255, 203, 0.7)) !important;
+}
+
+.bi-x-circle-fill.text-danger {
+    filter: drop-shadow(0 0 3px rgba(255, 123, 209, 0.7)) !important;
+}
+
+/* Action buttons glow */
+.btn-warning {
+    box-shadow: 0 0 8px rgba(255, 240, 123, 0.4) !important;
+}
+
+.btn-danger {
+    box-shadow: 0 0 8px rgba(255, 123, 209, 0.4) !important;
+}
+
+/* Pump temperature values glow */
+td:nth-child(7) {
+    color: var(--neon-cyan) !important;
+    text-shadow: 0 0 5px rgba(123, 233, 255, 0.3);
+}
+
+.high-temp {
+    background-color: rgba(255, 123, 209, 0.15);
+}
+
+/* Chart Area */
+.chart-area, .chart-pie {
+    position: relative;
+    height: 100%;
+    width: 100%;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Service Chart Glow Effects */
+.chart-pie canvas {
+    filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.2));
+    margin: 0 auto; /* Center the chart */
+    max-height: 80% !important; /* Adjusted height for better balance */
+    height: 80% !important;
+}
+
+.service-chart-wrapper {
+    position: relative;
+    height: 100% !important;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding-bottom: 15px;
+    flex: 1;
+}
+
+.service-chart-wrapper::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    background: radial-gradient(circle at center, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+    z-index: 1;
+}
+
+/* Service chart body with more space for legend */
+.service-chart-body {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Adjust legend spacing and layout */
+.service-chart-container .chartjs-legend {
+    margin-top: 10px !important;
+    padding-top: 1px !important;
+    display: flex !important;
+    justify-content: center !important;
+}
+
+/* Force horizontal layout for legend */
+.service-chart-container .chartjs-legend ul,
+.service-chart-container canvas + ul {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+    gap: 8px !important; /* Reduced gap */
+    margin-top: 10px !important; /* Reduced margin */
+}
+
+/* Target Chart.js generated legend */
+#serviceChart + ul {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+    margin-top: 10px !important; /* Reduced margin */
+    padding-left: 0 !important;
+}
+
+/* Ensure legend items are properly spaced */
+.service-chart-container .chartjs-legend li {
+    margin: 0 10px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+}
+
+/* Service chart body styling */
+.service-chart-body {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+/* Adjust the chart container height */
+.service-chart-container {
+    height: auto;
+}
+
+/* Ensure the legend has proper spacing */
+.service-chart-body .chartjs-legend-list {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 15px;
+}
+
+/* Service Chart Legend Styling */
+.chart-legend-item {
+    display: inline-flex;
+    align-items: center;
+    margin-right: 15px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.chart-legend-item:hover {
+    transform: translateY(-2px);
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.color-box {
+    box-shadow: 0 0 8px currentColor;
+    border-radius: 3px;
+}
+
+/* Button Styles */
+.btn-primary {
+    background-color: var(--neon-blue);
+    border-color: var(--neon-blue);
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: rgba(123, 147, 255, 0.8);
+    border-color: rgba(123, 147, 255, 0.8);
+    box-shadow: 0 0 15px rgba(123, 147, 255, 0.5);
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
+.btn-success {
+    background-color: var(--neon-green);
+    border-color: var(--neon-green);
+    color: #1e1e1e;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.btn-success:hover {
+    background-color: rgba(124, 255, 203, 0.8);
+    border-color: rgba(124, 255, 203, 0.8);
+    color: #1e1e1e;
+    box-shadow: 0 0 15px rgba(124, 255, 203, 0.5);
+}
+
+.btn-danger {
+    background-color: var(--neon-pink);
+    border-color: var(--neon-pink);
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.btn-danger:hover {
+    background-color: rgba(255, 123, 209, 0.8);
+    border-color: rgba(255, 123, 209, 0.8);
+    box-shadow: 0 0 15px rgba(255, 123, 209, 0.5);
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
+/* Form Controls */
+.form-control, .form-select {
+    background-color: var(--dark-elevated);
+    border-color: var(--dark-border);
+    color: var(--text-primary);
+}
+
+.form-control:focus, .form-select:focus {
+    background-color: var(--dark-elevated);
+    border-color: var(--neon-blue);
+    color: var(--text-primary);
+    box-shadow: 0 0 0 0.25rem rgba(123, 147, 255, 0.25);
+}
+
+.form-check-input {
+    background-color: var(--dark-elevated);
+    border-color: var(--dark-border);
+}
+
+.form-check-input:checked {
+    background-color: var(--neon-blue);
+    border-color: var(--neon-blue);
+}
+
+/* Alert Styles */
+.alert {
+    border: 1px solid transparent;
+}
+
+.alert-success {
+    background-color: rgba(124, 255, 203, 0.15);
+    border-color: rgba(124, 255, 203, 0.3);
+    color: var(--neon-green);
+}
+
+.alert-danger {
+    background-color: rgba(255, 123, 209, 0.15);
+    border-color: rgba(255, 123, 209, 0.3);
+    color: var(--neon-pink);
+}
+
+.alert-warning {
+    background-color: rgba(255, 240, 123, 0.15);
+    border-color: rgba(255, 240, 123, 0.3);
+    color: var(--neon-yellow);
+}
+
+.alert-info {
+    background-color: rgba(123, 233, 255, 0.15);
+    border-color: rgba(123, 233, 255, 0.3);
+    color: var(--neon-cyan);
+}
+
+/* Dashboard Layout - Responsive Grid System */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    grid-auto-rows: minmax(80px, auto);
+    gap: 0.5rem;
+    margin: 0.5rem 0;
+    height: calc(100vh - 80px); /* Fill available height minus header */
+}
+
+.maintenance-rate-container {
+    grid-column: 9 / span 4;
+    grid-row: 1;
+}
+
+.temperature-chart-container {
+    grid-column: 1 / span 8;
+    grid-row: 1 / span 2;
+}
+
+.service-chart-container {
+    grid-column: 9 / span 4;
+    grid-row: 2;
+}
+
+.maintenance-rate-card {
+    border-left: 4px solid var(--neon-green);
+    background: linear-gradient(90deg, rgba(124, 255, 203, 0.2) 0%, rgba(40, 40, 40, 0.6) 100%);
+    position: relative;
+    overflow: hidden;
+}
+
+.maintenance-rate-card::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at 30% 50%, rgba(124, 255, 203, 0.15), transparent 70%);
+    pointer-events: none;
+}
+
+.maintenance-rate-value {
+    font-size: 2.5rem; /* Adjusted for arcade font */
+    font-weight: 700;
+    color: var(--neon-green);
+    text-shadow: 0 0 10px rgba(124, 255, 203, 0.5);
+    margin-bottom: 0; /* Remove bottom margin */
+    line-height: 1.2; /* Improved line height for larger font */
+    letter-spacing: 0.05em; /* Better spacing for arcade font */
+    -webkit-text-stroke: 1px rgba(124, 255, 203, 0.8); /* Arcade-style outline */
+}
+
+/* Maintenance rate label */
+.maintenance-rate-card .text-xs {
+    font-size: 0.7rem !important; /* Adjusted for arcade font */
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+    text-shadow: 0 0 5px rgba(124, 255, 203, 0.3);
+}
+
+/* Responsive adjustments */
+@media (max-width: 800px) {
+    .maintenance-rate-container {
+        grid-column: 1 / span 6;
+    }
+
+    .service-chart-container {
+        grid-column: 7 / span 6;
+    }
+
+    .temperature-chart-container {
+        grid-column: 1 / span 12;
+        grid-row: 2;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .dashboard-grid {
+        display: flex;
+        flex-direction: column;
+    }
+
+    main {
+        margin-left: 0;
+        width: 100%;
+        padding-left: 70px;
+    }
+
+    .sidebar {
+        width: 50px;
+    }
+
+    .sidebar .nav-link .nav-text {
+        left: 50px;
+    }
+
+    .sidebar-hidden {
+        padding-left: 1rem;
+    }
+}
+
+/* Equipment list styles */
+.equipment-row {
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.equipment-row:hover {
+    background-color: rgba(123, 147, 255, 0.2);
+}
+
+/* Temperature Chart Legend */
+.temp-chart-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.legend-item {
+    display: inline-flex;
+    align-items: center;
+    margin-right: 15px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.legend-item:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    transform: translateY(-2px);
+}
+
+.legend-color {
+    width: 15px;
+    height: 15px;
+    border-radius: 3px;
+    margin-right: 8px;
+    box-shadow: 0 0 5px currentColor;
+    position: relative;
+}
+
+.legend-item.inactive {
+    opacity: 0.5 !important;
+    transition: opacity 0.2s ease;
+}
+
+.legend-item {
+    opacity: 1;
+    transition: opacity 0.2s ease;
+}
+
+.legend-item.inactive .legend-color {
+    box-shadow: none !important;
+}
+
+/* Equipment filter controls */
+.filter-controls {
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    background-color: var(--dark-elevated);
+    border-radius: 0.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.filter-label {
+    font-size: 0.9rem;
+    margin-right: 0.5rem;
+    color: var(--text-secondary);
+}
+
+/* Filter button styling */
+.btn-filter {
+    background-color: rgba(40, 40, 40, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.8);
+    padding: 0.25rem 0.75rem;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-filter:hover {
+    background-color: rgba(60, 60, 60, 0.8);
+    color: white;
+    text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+    border-color: var(--neon-blue);
+    box-shadow: 0 0 10px rgba(123, 147, 255, 0.3);
+}
+
+.btn-filter.active {
+    background-color: rgba(123, 147, 255, 0.3);
+    border-color: rgba(123, 147, 255, 0.8);
+    box-shadow: 0 0 15px rgba(123, 147, 255, 0.4);
+    text-shadow: 0 0 5px rgba(255, 255, 255, 0.7);
+}
+
+/* Sidebar icon hover effect */
+.sidebar .nav-link:hover i.bi {
+    color: var(--neon-blue);
+    filter: drop-shadow(0 0 5px rgba(123, 147, 255, 0.7));
+}
+
+/* Custom tooltip CSS removed - using nav-text instead */
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--dark-bg);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--dark-border);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--dark-elevated);
+}
+
+
+/* Enhanced row hover effect */
+.maintenance-table > tbody > tr:hover {
+    background-color: #7982aa1a !important;
+}
+
+/* Action buttons - horizontal layout */
+.actions-col .d-grid.gap-2,
+.table .d-grid.gap-2 {
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 8px !important;
+    justify-content: center !important;
+}
+
+/* Make edit/pencil icon white */
+.btn-warning .bi-pencil {
+    color: white !important;
+}
+/* Make edit/pencil icon white */
+.btn-danger .bi-trash {
+    color: white !important;
+}
+
+.btn-primary .bi-plus {
+    color: white !important;
+}
+/* Hover effect for buttons - blue */
+.actions-col .btn:hover,
+.table .btn:hover {
+    background-color: var(--neon-blue) !important;
+    border-color: var(--neon-blue) !important;
+    color: white !important;
+    transform: translateY(-2px);
+    transition: all 0.2s ease;
+}
+
+/* Hover effect for button icons */
+.actions-col .btn:hover .bi,
+.table .btn:hover .bi {
+    color: white !important;
+}
+
+/* Row styling for saved rows - light gray glow */
+.maintenance-table > tbody > tr.saved-row,
+.table > tbody > tr.saved-row {
+    box-shadow: inset 0 0 10px rgba(200, 200, 200, 0.15), 0 0 15px rgba(200, 200, 200, 0.1) !important;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+/* Enhanced row hover effect */
+.maintenance-table > tbody > tr:hover,
+.table > tbody > tr:hover {
+    background-color: rgba(123, 147, 255, 0.1) !important;
+}
+
+/* Making sure checkboxes and form controls display properly */
+.form-check-input {
+    margin: 0 auto !important;
+    display: block !important;
+}
+
+/* Page header styling */
+.h2 {
+    font-size: 1.8rem !important;
+    font-weight: 600 !important;
+    color: rgba(255, 255, 255, 0.95) !important;
+    margin-bottom: 1.5rem !important;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Fix for checkbox columns */
+.checkbox-col {
+    text-align: center !important;
+}
+
+/* Fix for text alignment in other columns */
+td.service-col,
+td.notes-col,
+td.employee-col {
+    text-align: left !important;
+}
+
+td.temp-col {
+    text-align: center !important;
+}
+
+/* Table-container styling maintenance */
+.table-container {
+    position: relative !important;
+    overflow-x: auto !important;
+    overflow-y: auto !important;
+    max-height: calc(100vh - 150px) !important;
+    border: 1px solid #333333 !important;
+    margin-top: 20px !important;
+    background-color: rgba(30, 30, 30, 0.3) !important;
+}
+
+/* Maintenance table core styling */
+.maintenance-table {
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
+    width: 100% !important;
+    min-width: 100% !important;
+}
+
+/* Column width definitions */
+.date-col { min-width: 160px !important; }
+.employee-col { min-width: 180px !important; }
+.checkbox-col {
+    min-width: 100px !important;
+    text-align: center !important;
+}
+.temp-col {
+    min-width: 100px !important;
+    text-align: center !important;
+}
+.service-col { min-width: 180px !important; }
+.notes-col { min-width: 200px !important; }
+.actions-col { min-width: 140px !important; }
+
+/* Form control styling */
+.form-control-wide { width: 100% !important; }
+.temp-box { width: 80px !important; }

@@ -1,0 +1,199 @@
+<!-- templates/equipment_detail.html -->
+{% extends 'base.html' %}
+
+{% block title %}Equipment Details{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3">
+    <h1 class="h2">Equipment: {{ equipment.equipment_name }}</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <a href="{{ url_for('equipment_edit', equipment_id=equipment.equipment_id) }}" class="btn btn-sm btn-warning">
+                <i class="bi bi-pencil"></i>
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Equipment Details</h5>
+            </div>
+            <div class="card-body">
+                <table class="table">
+                    <tr>
+                        <th style="width: 150px;">ID:</th>
+                        <td>{{ equipment.equipment_id }}</td>
+                    </tr>
+                    <tr>
+                        <th>Name:</th>
+                        <td>{{ equipment.equipment_name }}</td>
+                    </tr>
+                    <tr>
+                        <th>Pump Model:</th>
+                        <td>{{ equipment.pump_model or 'N/A' }}</td>
+                    </tr>
+                    <tr>
+                        <th>Oil Type:</th>
+                        <td>{{ equipment.oil_type or 'N/A' }}</td>
+                    </tr>
+                    <tr>
+                        <th>Owner:</th>
+                        <td>{{ equipment.pump_owner or 'N/A' }}</td>
+                    </tr>
+                    <tr>
+                        <th>Status:</th>
+                        <td>
+                            <span class="badge {% if equipment.status == 'Active' %}bg-success{% else %}bg-secondary{% endif %}">
+                                {{ equipment.status }}
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Notes:</th>
+                        <td>{{ equipment.notes or 'N/A' }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Temperature History</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="equipmentTempChart" height="304"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0">Maintenance History</h5>
+        <a href="{{ url_for('weekly_log') }}" class="btn btn-sm btn-primary">
+            <i class="bi bi-plus-circle"></i>
+        </a>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Work Week</th>
+                        <th>Oil Level</th>
+                        <th>Oil Condition</th>
+                        <th>Oil Filter</th>
+                        <th>Pump Temp</th>
+                        <th>Service</th>
+                        <th>Service Notes</th>
+                        <th>Employee</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                    <tr>
+                        <td>{{ log.check_date.strftime('%Y-%m-%d') }}</td>
+                        <td>{{ log.work_week }}</td>
+                        <td class="text-center">
+                            {% if log.oil_level_ok %}
+                            <i class="bi bi-check-circle-fill text-success"></i>
+                            {% else %}
+                            <i class="bi bi-x-circle-fill text-danger"></i>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if log.oil_condition_ok %}
+                            <i class="bi bi-check-circle-fill text-success"></i>
+                            {% else %}
+                            <i class="bi bi-x-circle-fill text-danger"></i>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if log.oil_filter_ok %}
+                            <i class="bi bi-check-circle-fill text-success"></i>
+                            {% else %}
+                            <i class="bi bi-x-circle-fill text-danger"></i>
+                            {% endif %}
+                        </td>
+                        <td>{{ log.pump_temp }}{% if log.pump_temp %}°C{% endif %}</td>
+                        <td>{{ log.service }}</td>
+                        <td>{{ log.service_notes }}</td>
+                        <td>{{ log.user_name or 'Unknown' }}</td>
+                        <td>
+                            <div class="btn-group gap-2">
+                                <a href="{{ url_for('edit_maintenance_log', log_id=log.log_id) }}" class="btn btn-sm btn-warning">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <a href="{{ url_for('delete_maintenance_log', log_id=log.log_id) }}" 
+                                   class="btn btn-sm btn-danger"
+                                   onclick="return confirmDelete(event, 'Are you sure you want to delete this maintenance record?')">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const tempData = {
+        labels: [{% for log in logs|reverse %}{% if log.pump_temp %}'{{ log.check_date.strftime('%Y-%m-%d') }}',{% endif %}{% endfor %}],
+        datasets: [{
+            label: 'Pump Temperature (°C)',
+            data: [{% for log in logs|reverse %}{% if log.pump_temp %}{{ log.pump_temp }},{% endif %}{% endfor %}],
+            backgroundColor: 'rgba(78, 115, 223, 0.05)',
+            borderColor: 'rgba(78, 115, 223, 1)',
+            pointRadius: 3,
+            pointBackgroundColor: 'rgba(78, 115, 223, 1)',
+            pointBorderColor: 'rgba(78, 115, 223, 1)',
+            pointHoverRadius: 3,
+            pointHoverBackgroundColor: 'rgba(78, 115, 223, 1)',
+            pointHoverBorderColor: 'rgba(78, 115, 223, 1)',
+            pointHitRadius: 10,
+            pointBorderWidth: 2,
+            fill: true
+        }]
+    };
+
+    const tempCtx = document.getElementById('equipmentTempChart').getContext('2d');
+    new Chart(tempCtx, {
+        type: 'line',
+        data: tempData,
+        options: {
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: false,
+                    title: {
+                        display: true,
+                        text: 'Temperature (°C)'
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,92 @@
+<!-- edit_maintenance_log.html -->
+{% extends 'base.html' %}
+
+{% block title %}Edit Maintenance Log{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3">
+    <h1 class="h2">Edit Maintenance Log</h1>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <form method="post">
+                    <div class="mb-3">
+                        <label for="check_date" class="form-label">Check Date</label>
+                        <input type="date" class="form-control" id="check_date" name="check_date"
+                               value="{{ log.check_date.strftime('%Y-%m-%d') }}" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="user_name" class="form-label">Employee</label>
+                        <input type="text" class="form-control" id="user_name" name="user_name"
+                               value="{{ log.user_name }}" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Equipment</label>
+                        <input type="text" class="form-control" value="{{ log.equipment.equipment_name }}" readonly>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="oil_level_ok" name="oil_level_ok"
+                                       {% if log.oil_level_ok %}checked{% endif %}>
+                                <label class="form-check-label" for="oil_level_ok">
+                                    Oil Level OK
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="oil_condition_ok" name="oil_condition_ok"
+                                       {% if log.oil_condition_ok %}checked{% endif %}>
+                                <label class="form-check-label" for="oil_condition_ok">
+                                    Oil Condition OK
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="oil_filter_ok" name="oil_filter_ok"
+                                       {% if log.oil_filter_ok %}checked{% endif %}>
+                                <label class="form-check-label" for="oil_filter_ok">
+                                    Oil Filter OK
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="pump_temp" class="form-label">Pump Temperature</label>
+                        <input type="text" class="form-control" id="pump_temp" name="pump_temp"
+                               value="{{ log.pump_temp or '' }}">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="service" class="form-label">Service</label>
+                        <select class="form-select" id="service" name="service">
+                            <option value="None Required" {% if log.service == "None Required" %}selected{% endif %}>None Required</option>
+                            <option value="Add Oil" {% if log.service == "Add Oil" %}selected{% endif %}>Add Oil</option>
+                            <option value="Drain & Replace Oil" {% if log.service == "Drain & Replace Oil" %}selected{% endif %}>Drain & Replace Oil</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="service_notes" class="form-label">Service Notes</label>
+                        <textarea class="form-control" id="service_notes" name="service_notes" rows="3">{{ log.service_notes or '' }}</textarea>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">Save</button>
+                        <a href="{{ url_for('maintenance_logs') }}" class="btn btn-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

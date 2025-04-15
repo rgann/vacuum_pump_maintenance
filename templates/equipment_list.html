@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+
+{% block title %}Equipment List{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3">
+    <h1 class="h2">Equipment List</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('equipment_add') }}" class="btn btn-primary me-2">
+            <i class="bi bi-plus"></i>
+        </a>
+        <button type="button" class="btn btn-danger" id="toggle-remove-mode">
+            <i class="bi bi-trash"></i>
+        </button>
+    </div>
+</div>
+
+<div id="delete-controls" class="mb-3" style="display: none;">
+    <button type="button" class="btn btn-danger" id="confirm-delete">Confirm Delete</button>
+    <button type="button" class="btn btn-secondary" id="cancel-delete">Cancel</button>
+    <span class="ms-2 text-muted">Please select the equipment you want to remove</span>
+</div>
+
+<form id="delete-form" method="post" action="{{ url_for('equipment_delete_multiple') }}">
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th style="width: 40px;" class="delete-checkbox-header" hidden>
+                        <input type="checkbox" id="select-all">
+                    </th>
+                    <th>ID</th>
+                    <th>Equipment</th>
+                    <th>Pump Model</th>
+                    <th>Oil Type/Scroll</th>
+                    <th>Pump Owner</th>
+                    <th>Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in equipment %}
+                <tr class="equipment-row" data-href="{{ url_for('equipment_detail', equipment_id=item.equipment_id) }}">
+                    <td class="delete-checkbox-cell" hidden>
+                        <input type="checkbox" name="equipment_ids" value="{{ item.equipment_id }}" class="delete-checkbox">
+                    </td>
+                    <td>{{ item.equipment_id }}</td>
+                    <td>{{ item.equipment_name }}</td>
+                    <td>{{ item.pump_model or '' }}</td>
+                    <td>{{ item.oil_type or '' }}</td>
+                    <td>{{ item.pump_owner or '' }}</td>
+                    <td>{{ item.notes or '' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</form>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const equipmentRows = document.querySelectorAll('.equipment-row');
+        equipmentRows.forEach(row => {
+            row.addEventListener('click', function(e) {
+                if (e.target.type === 'checkbox') return;
+                
+                if (document.getElementById('delete-controls').style.display !== 'none') return;
+                
+                window.location.href = this.dataset.href;
+            });
+        });
+        
+        const toggleRemoveMode = document.getElementById('toggle-remove-mode');
+        const deleteControls = document.getElementById('delete-controls');
+        const deleteCheckboxHeader = document.querySelector('.delete-checkbox-header');
+        const deleteCheckboxCells = document.querySelectorAll('.delete-checkbox-cell');
+        
+        toggleRemoveMode.addEventListener('click', function() {
+            if (deleteControls.style.display === 'none') {
+                deleteControls.style.display = 'block';
+                deleteCheckboxHeader.hidden = false;
+                deleteCheckboxCells.forEach(cell => cell.hidden = false);
+            } else {
+                deleteControls.style.display = 'none';
+                deleteCheckboxHeader.hidden = true;
+                deleteCheckboxCells.forEach(cell => cell.hidden = true);
+                document.querySelectorAll('.delete-checkbox').forEach(cb => cb.checked = false);
+                document.getElementById('select-all').checked = false;
+            }
+        });
+        
+        document.getElementById('cancel-delete').addEventListener('click', function() {
+            deleteControls.style.display = 'none';
+            deleteCheckboxHeader.hidden = true;
+            deleteCheckboxCells.forEach(cell => cell.hidden = true);
+            document.querySelectorAll('.delete-checkbox').forEach(cb => cb.checked = false);
+            document.getElementById('select-all').checked = false;
+        });
+        
+        document.getElementById('confirm-delete').addEventListener('click', function() {
+            const checkedBoxes = document.querySelectorAll('.delete-checkbox:checked');
+            if (checkedBoxes.length === 0) {
+                alert('Please select at least one equipment to delete');
+                return;
+            }
+            
+            if (confirm('Are you sure you want to delete ' + checkedBoxes.length + ' equipment items? This action cannot be undone.')) {
+                document.getElementById('delete-form').submit();
+            }
+        });
+        
+        document.getElementById('select-all').addEventListener('click', function() {
+            document.querySelectorAll('.delete-checkbox').forEach(cb => {
+                cb.checked = this.checked;
+            });
+        });
+    });
+</script>
+{% endblock %}
