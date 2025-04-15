@@ -115,7 +115,11 @@ def db_status():
         equipment_sample = [{
             'id': e.equipment_id,
             'name': e.equipment_name,
-            'location': e.location
+            'pump_model': e.pump_model,
+            'oil_type': e.oil_type,
+            'pump_owner': e.pump_owner,
+            'status': e.status,
+            'notes': e.notes
         } for e in Equipment.query.limit(3).all()]
 
         logs_sample = [{
@@ -133,6 +137,27 @@ def db_status():
             "logs_count": logs_count,
             "equipment_sample": equipment_sample,
             "logs_sample": logs_sample,
+            "timestamp": datetime.now().isoformat()
+        })
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": str(e),
+            "timestamp": datetime.now().isoformat()
+        }), 500
+
+@app.route('/run-seed-script')
+def run_seed_script():
+    """Run the seed_initial_data.py script directly"""
+    try:
+        import subprocess
+        result = subprocess.run(['python', 'seed_initial_data.py'], capture_output=True, text=True)
+
+        return jsonify({
+            "status": "success" if result.returncode == 0 else "error",
+            "message": "Seed script executed",
+            "stdout": result.stdout,
+            "stderr": result.stderr,
             "timestamp": datetime.now().isoformat()
         })
     except Exception as e:
@@ -183,153 +208,18 @@ def direct_init_db_route():
 
 @app.route('/emergency-db-init')
 def emergency_db_init():
-    """Emergency database initialization - creates and populates the database directly in the route"""
+    """Emergency database initialization using seed_initial_data.py"""
     try:
-        import sqlite3
-        from datetime import datetime, timedelta
-        import random
-        import os
+        # Import the initialization function from seed_initial_data.py
+        from seed_initial_data import initialize_database
 
-        # Use the database in the current directory
-        db_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), "vacuum_pump_maintenance.db")
+        # Run the initialization function
+        initialize_database()
 
-        # Create connection
-        conn = sqlite3.connect(db_path)
-        cursor = conn.cursor()
-
-        # Create tables
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS equipment (
-            equipment_id INTEGER PRIMARY KEY,
-            equipment_name TEXT NOT NULL,
-            pump_model TEXT,
-            oil_type TEXT,
-            pump_owner TEXT,
-            status TEXT DEFAULT 'active',
-            notes TEXT
-        )
-        ''')
-
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS maintenance_log (
-            log_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            equipment_id INTEGER NOT NULL,
-            work_week TEXT NOT NULL,
-            check_date DATE NOT NULL,
-            user_name TEXT,
-            oil_level_ok BOOLEAN,
-            oil_condition_ok BOOLEAN,
-            oil_filter_ok BOOLEAN,
-            pump_temp REAL,
-            service TEXT,
-            service_notes TEXT,
-            FOREIGN KEY (equipment_id) REFERENCES equipment (equipment_id) ON DELETE CASCADE
-        )
-        ''')
-
-        # Check if we already have data
-        cursor.execute("SELECT COUNT(*) FROM equipment")
-        count = cursor.fetchone()[0]
-
-        if count > 0:
-            return jsonify({
-                "status": "success",
-                "message": f"Database already contains {count} equipment records. No new data added.",
-                "timestamp": datetime.now().isoformat()
-            })
-
-        # Sample equipment data (equipment_id, equipment_name, pump_model, oil_type, pump_owner, status, notes)
-        equipment_data = [
-            (1, "JR Intake GB", "JR-2000", "Synthetic 20W", "Engineering", "active", "Main intake pump"),
-            (2, "Spot/Sonic Weld GB", "SW-500", "Mineral 10W", "Production", "active", "Requires weekly checks"),
-            (3, "Elyte GB", "EL-1000", "Synthetic 30W", "R&D", "active", "New installation"),
-            (4, "Chem GB 005", "CG-005", "Synthetic 20W", "Chemistry", "active", "Sensitive to temperature"),
-            (5, "Chem GB 006", "CG-006", "Synthetic 20W", "Chemistry", "active", "Backup for CG-005"),
-            (6, "GCMS", "GC-2000", "Mineral 15W", "Analytics", "active", "Critical system"),
-            (7, "GCMS panel", "GCP-100", "Mineral 15W", "Analytics", "active", "Connected to GCMS"),
-            (8, "Gas Pump/Goop Transfer", "GP-500", "Synthetic 40W", "Production", "active", "High temperature operation"),
-            (9, "Jupiter", "JP-1000", "Synthetic 20W", "R&D", "active", "Experimental setup"),
-            (10, "Olympus", "OL-2000", "Mineral 10W", "Engineering", "active", "Main production line")
-        ]
-
-        # Insert equipment data
-        cursor.executemany(
-            "INSERT INTO equipment (equipment_id, equipment_name, pump_model, oil_type, pump_owner, status, notes) VALUES (?, ?, ?, ?, ?, ?, ?)",
-            equipment_data
-        )
-
-        # Generate work weeks for the past 8 weeks
-        today = datetime.now()
-        work_weeks = []
-        for i in range(8):
-            date = today - timedelta(weeks=i)
-            year = date.year
-            week = date.isocalendar()[1]
-            work_week = f"{year}-WW{week:02d}"
-            work_weeks.append(work_week)
-
-        # Generate maintenance logs
-        services = ["None Required", "Add Oil", "Drain & Replace Oil", "Replace Filter", "Clean Pump", "Major Service"]
-        maintenance_logs = []
-
-        for equipment_id, _, _, _, _ in equipment_data:
-            for i, work_week in enumerate(work_weeks):
-                # Skip some entries to make data more realistic
-                if random.random() < 0.2:
-                    continue
-
-                # Generate random data
-                check_date = (today - timedelta(weeks=i, days=random.randint(0, 6))).strftime('%Y-%m-%d')
-                oil_level_ok = 1 if random.random() > 0.2 else 0
-                oil_condition_ok = 1 if random.random() > 0.2 else 0
-                oil_filter_ok = 1 if random.random() > 0.2 else 0
-                pump_temp = random.uniform(60, 85)
-
-                # Determine service based on conditions
-                if not oil_level_ok and not oil_condition_ok:
-                    service = "Drain & Replace Oil"
-                elif not oil_level_ok:
-                    service = "Add Oil"
-                elif not oil_filter_ok:
-                    service = "Replace Filter"
-                else:
-                    service = random.choice(services)
-
-                maintenance_logs.append((
-                    equipment_id,
-                    work_week,
-                    check_date,
-                    "System",
-                    oil_level_ok,
-                    oil_condition_ok,
-                    oil_filter_ok,
-                    pump_temp,
-                    service,
-                    "Initial setup data"
-                ))
-
-        # Insert maintenance logs
-        cursor.executemany(
-            """
-            INSERT INTO maintenance_log
-            (equipment_id, work_week, check_date, user_name, oil_level_ok, oil_condition_ok, oil_filter_ok, pump_temp, service, service_notes)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-            maintenance_logs
-        )
-
-        # Commit changes and close connection
-        conn.commit()
-        conn.close()
-
-        # Reload the database in SQLAlchemy
-        with app.app_context():
-            db.create_all()
-
+        # Return success response
         return jsonify({
             "status": "success",
-            "message": f"Database initialized with {len(equipment_data)} equipment records and {len(maintenance_logs)} maintenance logs",
-            "db_path": db_path,
+            "message": "Database initialized successfully using seed_initial_data.py",
             "timestamp": datetime.now().isoformat()
         })
     except Exception as e:
