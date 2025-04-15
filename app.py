@@ -39,7 +39,9 @@ if hasattr(sys, '_MEIPASS'):
     logger.info(f"Using database at {db_path}")
 elif is_on_render:
     # When running on Render.com
-    render_data_dir = os.environ.get('RENDER_DATA_DIR', '/var/data')
+    # Use a directory that we have permission to access
+    # For Render, we'll use a subdirectory in the project folder
+    render_data_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
     os.makedirs(render_data_dir, exist_ok=True)
     db_path = os.path.join(render_data_dir, "vacuum_pump_maintenance.db")
     print(f"Render environment: Using database at: {db_path}")
