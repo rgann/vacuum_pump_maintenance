@@ -356,7 +356,21 @@ def weekly_log():
                 db.session.commit()
                 flash(f"Weekly log has been reset for {work_week}", "info")
 
-        equipment_list = Equipment.query.order_by(Equipment.equipment_id).all()
+        # Get all equipment first to count how many are filtered out
+        all_equipment = Equipment.query.order_by(Equipment.equipment_id).all()
+
+        # Filter out equipment with "scroll" in oil_type or "spare" in equipment_name
+        equipment_list = Equipment.query.filter(
+            # For oil_type, handle NULL values and exclude "scroll" (case insensitive)
+            (Equipment.oil_type.is_(None) | ~Equipment.oil_type.ilike('%scroll%')),
+            # Exclude equipment with "spare" in name (case insensitive)
+            ~Equipment.equipment_name.ilike('%spare%')
+        ).order_by(Equipment.equipment_id).all()
+
+        # Calculate how many items were filtered out
+        filtered_out_count = len(all_equipment) - len(equipment_list)
+        if filtered_out_count > 0:
+            logger.info(f"Filtered out {filtered_out_count} equipment items with 'scroll' in oil type or 'spare' in name")
 
         existing_logs = {}
         logs = MaintenanceLog.query.filter_by(work_week=work_week).all()
