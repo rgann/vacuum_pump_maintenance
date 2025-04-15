@@ -27,17 +27,30 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-# SIMPLIFIED DATABASE CONFIGURATION
-# Always use a database in the current directory for simplicity
-db_dir = os.path.abspath(os.path.dirname(__file__))
-db_path = os.path.join(db_dir, "vacuum_pump_maintenance.db")
+# DATABASE CONFIGURATION
+# Check if running on Render (environment variable set by Render)
+if os.environ.get('DATABASE_URL'):
+    # Use PostgreSQL database URL provided by Render
+    database_url = os.environ.get('DATABASE_URL')
+    # Render uses postgres:// but SQLAlchemy requires postgresql://
+    if database_url.startswith('postgres://'):
+        database_url = database_url.replace('postgres://', 'postgresql://', 1)
 
-# Log the database path
-print(f"Using database at: {db_path}")
-logger.info(f"Using database at: {db_path}")
+    # Set the database URI to the PostgreSQL URL
+    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+    logger.info(f"Using PostgreSQL database")
+    print(f"Using PostgreSQL database")
+else:
+    # Local development - use SQLite
+    db_dir = os.path.abspath(os.path.dirname(__file__))
+    db_path = os.path.join(db_dir, "vacuum_pump_maintenance.db")
 
-# Set the database URI
-app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
+    # Log the database path
+    print(f"Using SQLite database at: {db_path}")
+    logger.info(f"Using SQLite database at: {db_path}")
+
+    # Set the database URI to SQLite
+    app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
 
 db = SQLAlchemy(app)
 
@@ -167,12 +180,30 @@ def run_seed_script():
             "timestamp": datetime.now().isoformat()
         }), 500
 
+def is_database_initialized():
+    """Check if the database has been initialized by looking for tables"""
+    try:
+        # Check if the Equipment table exists and has data
+        equipment_count = db.session.query(db.func.count(Equipment.equipment_id)).scalar()
+        return equipment_count > 0
+    except Exception as e:
+        logger.error(f"Error checking database initialization: {e}")
+        return False
+
 @app.route('/init-db')
 def init_db_route():
-    """Initialize the database with sample data"""
+    """Initialize the database with sample data only if not already initialized"""
     try:
+        # Check if database is already initialized
+        if is_database_initialized():
+            return jsonify({
+                "status": "success",
+                "message": "Database already initialized with data. No action taken.",
+                "timestamp": datetime.now().isoformat()
+            })
+
         # Import here to avoid circular imports
-        from render_init_db import create_sample_data
+        from db_init import create_sample_data
         create_sample_data()
         return jsonify({
             "status": "success",
@@ -188,10 +219,18 @@ def init_db_route():
 
 @app.route('/direct-init-db')
 def direct_init_db_route():
-    """Initialize the database directly with SQLite"""
+    """Initialize the database directly"""
     try:
+        # Check if database is already initialized
+        if is_database_initialized():
+            return jsonify({
+                "status": "success",
+                "message": "Database already initialized with data. No action taken.",
+                "timestamp": datetime.now().isoformat()
+            })
+
         import subprocess
-        result = subprocess.run(['python', 'direct_db_init.py'], capture_output=True, text=True)
+        result = subprocess.run(['python', 'db_init.py'], capture_output=True, text=True)
         return jsonify({
             "status": "success" if result.returncode == 0 else "error",
             "message": "Database directly initialized with sample data",
@@ -208,18 +247,26 @@ def direct_init_db_route():
 
 @app.route('/emergency-db-init')
 def emergency_db_init():
-    """Emergency database initialization using seed_initial_data.py"""
+    """Emergency database initialization"""
     try:
-        # Import the initialization function from seed_initial_data.py
-        from seed_initial_data import initialize_database
+        # Check if database is already initialized
+        if is_database_initialized():
+            return jsonify({
+                "status": "success",
+                "message": "Database already initialized with data. No action taken.",
+                "timestamp": datetime.now().isoformat()
+            })
+
+        # Import the initialization function
+        from db_init import create_sample_data
 
         # Run the initialization function
-        initialize_database()
+        create_sample_data()
 
         # Return success response
         return jsonify({
             "status": "success",
-            "message": "Database initialized successfully using seed_initial_data.py",
+            "message": "Database initialized successfully",
             "timestamp": datetime.now().isoformat()
         })
     except Exception as e:
@@ -871,14 +918,16 @@ def not_found_error(error):
     flash("The requested page was not found.", "warning")
     return redirect(url_for('dashboard'))
 
-@event.listens_for(Engine, "connect")
-def set_sqlite_pragma(dbapi_connection, connection_record):
-    cursor = dbapi_connection.cursor()
-    cursor.execute("PRAGMA journal_mode=WAL")
-    cursor.execute("PRAGMA synchronous=NORMAL")
-    cursor.execute("PRAGMA temp_store=MEMORY")
-    cursor.execute("PRAGMA busy_timeout=5000")  # 5 second timeout
-    cursor.close()
+# Only set SQLite pragmas when using SQLite
+if 'sqlite' in app.config['SQLALCHEMY_DATABASE_URI']:
+    @event.listens_for(Engine, "connect")
+    def set_sqlite_pragma(dbapi_connection, connection_record):
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA journal_mode=WAL")
+        cursor.execute("PRAGMA synchronous=NORMAL")
+        cursor.execute("PRAGMA temp_store=MEMORY")
+        cursor.execute("PRAGMA busy_timeout=5000")  # 5 second timeout
+        cursor.close()
 
 with app.app_context():
     db.create_all()
