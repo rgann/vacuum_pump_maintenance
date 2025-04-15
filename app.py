@@ -29,6 +29,9 @@ logger = logging.getLogger(__name__)
 
 # DATABASE CONFIGURATION
 # Check if running on Render (environment variable set by Render)
+print(f"Environment variables: DATABASE_URL={os.environ.get('DATABASE_URL')}, RENDER={os.environ.get('RENDER')}")
+logger.info(f"Environment variables: DATABASE_URL={os.environ.get('DATABASE_URL')}, RENDER={os.environ.get('RENDER')}")
+
 if os.environ.get('DATABASE_URL'):
     # Use PostgreSQL database URL provided by Render
     database_url = os.environ.get('DATABASE_URL')
@@ -38,8 +41,8 @@ if os.environ.get('DATABASE_URL'):
 
     # Set the database URI to the PostgreSQL URL
     app.config['SQLALCHEMY_DATABASE_URI'] = database_url
-    logger.info(f"Using PostgreSQL database")
-    print(f"Using PostgreSQL database")
+    logger.info(f"Using PostgreSQL database with URL: {database_url.split('@')[0]}@...")
+    print(f"Using PostgreSQL database with URL: {database_url.split('@')[0]}@...")
 else:
     # Local development - use SQLite
     db_dir = os.path.abspath(os.path.dirname(__file__))
@@ -51,6 +54,9 @@ else:
 
     # Set the database URI to SQLite
     app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
+
+# Enable SQLAlchemy echo for debugging
+app.config['SQLALCHEMY_ECHO'] = True
 
 db = SQLAlchemy(app)
 
@@ -84,6 +90,18 @@ class Equipment(db.Model):
 
     def __repr__(self):
         return f"Equipment({self.equipment_id}: {self.equipment_name})"
+
+    def to_dict(self):
+        """Convert equipment object to dictionary"""
+        return {
+            'equipment_id': self.equipment_id,
+            'equipment_name': self.equipment_name,
+            'pump_model': self.pump_model,
+            'oil_type': self.oil_type,
+            'pump_owner': self.pump_owner,
+            'status': self.status,
+            'notes': self.notes
+        }
 
 class MaintenanceLog(db.Model):
     log_id = db.Column(db.Integer, primary_key=True)
@@ -267,6 +285,49 @@ def emergency_db_init():
         return jsonify({
             "status": "success",
             "message": "Database initialized successfully",
+            "timestamp": datetime.now().isoformat()
+        })
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": str(e),
+            "traceback": str(sys.exc_info()),
+            "timestamp": datetime.now().isoformat()
+        }), 500
+
+@app.route('/db-status')
+def db_status():
+    """Check database status and return information about tables and records"""
+    try:
+        # Get database connection information
+        db_info = {
+            "database_type": "PostgreSQL" if "postgresql" in app.config['SQLALCHEMY_DATABASE_URI'] else "SQLite",
+            "connection": app.config['SQLALCHEMY_DATABASE_URI'].split('@')[0] + '@...' if '@' in app.config['SQLALCHEMY_DATABASE_URI'] else app.config['SQLALCHEMY_DATABASE_URI'],
+            "tables": {}
+        }
+
+        # Get table information
+        equipment_count = Equipment.query.count()
+        db_info["tables"]["equipment"] = {
+            "count": equipment_count,
+            "sample": [e.to_dict() for e in Equipment.query.limit(3).all()] if equipment_count > 0 else []
+        }
+
+        maintenance_count = MaintenanceLog.query.count()
+        db_info["tables"]["maintenance_logs"] = {
+            "count": maintenance_count,
+            "sample": [{
+                "log_id": log.log_id,
+                "equipment_id": log.equipment_id,
+                "check_date": log.check_date.strftime('%Y-%m-%d') if log.check_date else None,
+                "user_name": log.user_name
+            } for log in MaintenanceLog.query.limit(3).all()] if maintenance_count > 0 else []
+        }
+
+        return jsonify({
+            "status": "success",
+            "message": "Database status retrieved successfully",
+            "data": db_info,
             "timestamp": datetime.now().isoformat()
         })
     except Exception as e:

@@ -18,6 +18,10 @@ services:
         fromDatabase:
           name: vacuum-pump-db
           property: connectionString
+    # Add a health check to ensure the app is running correctly
+    healthCheckPath: /
+    # Add automatic database initialization on deploy
+    initialDeployHook: python db_init.py
 
 # A PostgreSQL database
 databases:
@@ -25,3 +29,8 @@ databases:
     databaseName: vacuum_pump_maintenance
     user: vacuum_pump_user
     plan: free
+    # Add ipAllowList to allow connections from the web service
+    ipAllowList: []
+    # Ensure the database is created before the web service starts
+    postProvisionCommands:
+      - echo "Database provisioned successfully"

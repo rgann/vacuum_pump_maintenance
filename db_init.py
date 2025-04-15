@@ -1,7 +1,7 @@
 """
 Database initialization script that works with both SQLite and PostgreSQL
 """
-from app import db, Equipment, MaintenanceLog
+from app import app, db, Equipment, MaintenanceLog
 from datetime import datetime, timedelta
 import logging
 
@@ -18,14 +18,27 @@ def get_work_week(date_obj=None):
 def create_sample_data():
     """Create sample data for the application"""
     try:
+        # Log database connection info
+        logger.info(f"Database URI: {app.config['SQLALCHEMY_DATABASE_URI'].split('@')[0]}@...")
+        print(f"Database URI: {app.config['SQLALCHEMY_DATABASE_URI'].split('@')[0]}@...")
+
         # Create tables if they don't exist
+        logger.info("Creating database tables...")
+        print("Creating database tables...")
         db.create_all()
-        
+        logger.info("Database tables created successfully")
+        print("Database tables created successfully")
+
         # Check if we already have data
-        if Equipment.query.count() > 0:
+        equipment_count = Equipment.query.count()
+        logger.info(f"Current equipment count: {equipment_count}")
+        print(f"Current equipment count: {equipment_count}")
+
+        if equipment_count > 0:
             logger.info("Database already contains data. Skipping initialization.")
+            print("Database already contains data. Skipping initialization.")
             return
-            
+
         # Sample equipment data
         equipment_data = [
             {
@@ -143,7 +156,7 @@ def create_sample_data():
         # Commit all changes
         db.session.commit()
         logger.info("Sample data created successfully")
-        
+
     except Exception as e:
         db.session.rollback()
         logger.error(f"Error creating sample data: {e}")
