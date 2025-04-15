@@ -120,6 +120,25 @@ def health_check():
     """Health check endpoint for monitoring"""
     return jsonify({"status": "healthy", "timestamp": datetime.now().isoformat()})
 
+@app.route('/init-db')
+def init_db_route():
+    """Initialize the database with sample data"""
+    try:
+        # Import here to avoid circular imports
+        from render_init_db import create_sample_data
+        create_sample_data()
+        return jsonify({
+            "status": "success",
+            "message": "Database initialized with sample data",
+            "timestamp": datetime.now().isoformat()
+        })
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": str(e),
+            "timestamp": datetime.now().isoformat()
+        }), 500
+
 @app.route('/dashboard')
 def dashboard():
     try:
