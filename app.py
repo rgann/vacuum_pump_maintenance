@@ -131,51 +131,7 @@ def health_check():
     """Health check endpoint for monitoring"""
     return jsonify({"status": "healthy", "timestamp": datetime.now().isoformat()})
 
-@app.route('/db-status')
-def db_status():
-    """Check database status and content"""
-    try:
-        # Get database path
-        db_path = app.config['SQLALCHEMY_DATABASE_URI']
-
-        # Count records in tables
-        equipment_count = Equipment.query.count()
-        logs_count = MaintenanceLog.query.count()
-
-        # Get sample data
-        equipment_sample = [{
-            'id': e.equipment_id,
-            'name': e.equipment_name,
-            'pump_model': e.pump_model,
-            'oil_type': e.oil_type,
-            'pump_owner': e.pump_owner,
-            'status': e.status,
-            'notes': e.notes
-        } for e in Equipment.query.limit(3).all()]
-
-        logs_sample = [{
-            'id': log.log_id,
-            'equipment_id': log.equipment_id,
-            'work_week': log.work_week,
-            'check_date': log.check_date.strftime('%Y-%m-%d') if log.check_date else None,
-            'pump_temp': log.pump_temp
-        } for log in MaintenanceLog.query.limit(3).all()]
-
-        return jsonify({
-            "status": "success",
-            "database_path": db_path,
-            "equipment_count": equipment_count,
-            "logs_count": logs_count,
-            "equipment_sample": equipment_sample,
-            "logs_sample": logs_sample,
-            "timestamp": datetime.now().isoformat()
-        })
-    except Exception as e:
-        return jsonify({
-            "status": "error",
-            "message": str(e),
-            "timestamp": datetime.now().isoformat()
-        }), 500
+# Removed duplicate db_status route - using the more detailed version below
 
 @app.route('/run-seed-script')
 def run_seed_script():
