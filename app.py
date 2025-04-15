@@ -27,32 +27,34 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
+is_on_render = os.environ.get('RENDER') == 'true'
+
 if hasattr(sys, '_MEIPASS'):
     # When running as executable
     executable_dir = os.path.dirname(sys.executable)
     db_path = os.path.join(executable_dir, 'data', 'vacuum_pump_maintenance.db')
-
-    # Log the path to help with debugging
     print(f"Looking for database at: {db_path}")
     logger.info(f"Looking for database at: {db_path}")
-
-    # Set the database URI
     app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
     logger.info(f"Using database at {db_path}")
+elif is_on_render:
+    # When running on Render.com
+    render_data_dir = os.environ.get('RENDER_DATA_DIR', '/var/data')
+    os.makedirs(render_data_dir, exist_ok=True)
+    db_path = os.path.join(render_data_dir, "vacuum_pump_maintenance.db")
+    print(f"Render environment: Using database at: {db_path}")
+    logger.info(f"Render environment: Using database at: {db_path}")
+    app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
 else:
-    # Development mode - use the instance folder
+    # Development mode
     instance_path = os.path.join(os.path.abspath("."), "instance")
+    os.makedirs(instance_path, exist_ok=True)
     db_path = os.path.join(instance_path, "vacuum_pump_maintenance.db")
-
-    # Log for debugging
     print(f"Development mode: Looking for database at: {db_path}")
-
-    # Verify the database exists
     if os.path.exists(db_path):
         print(f"Database found at: {db_path}")
     else:
         print(f"WARNING: Database not found at: {db_path}")
-
     app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
 
 db = SQLAlchemy(app)
@@ -625,10 +627,8 @@ def set_sqlite_pragma(dbapi_connection, connection_record):
     cursor.execute("PRAGMA busy_timeout=5000")  # 5 second timeout
     cursor.close()
 
-# Create tables when app starts
 with app.app_context():
     db.create_all()
 
 if __name__ == '__main__':
-    # Only use debug mode when running locally
     app.run(debug=True)

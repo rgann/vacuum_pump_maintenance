@@ -1,7 +1,7 @@
 services:
   - type: web
     name: vacuum-pump-maintenance
-    env: python
+    runtime: python
     buildCommand: |
       pip install -r requirements.txt
       chmod +x render_build.sh
@@ -12,3 +12,9 @@ services:
         value: 3.9.0
       - key: FLASK_ENV
         value: production
+      - key: RENDER
+        value: "true"
+    disk:
+      name: data
+      mountPath: /var/data
+      sizeGB: 1
