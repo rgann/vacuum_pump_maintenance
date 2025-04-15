@@ -8,20 +8,16 @@ import sqlite3
 from datetime import datetime, timedelta
 import random
 
-# Ensure the data directory exists
-data_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
-os.makedirs(data_dir, exist_ok=True)
-print(f"Data directory created/verified: {data_dir}")
-
-# Database path
-db_path = os.path.join(data_dir, "vacuum_pump_maintenance.db")
+# Use the database in the current directory for simplicity
+db_dir = os.path.abspath(os.path.dirname(__file__))
+db_path = os.path.join(db_dir, "vacuum_pump_maintenance.db")
 print(f"Database path: {db_path}")
 
 # Check if database already exists and has data
 try:
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
-    
+
     # Check if equipment table exists and has data
     cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='equipment'")
     if cursor.fetchone():
@@ -110,14 +106,14 @@ for equipment_id, _, _, _, _ in equipment_data:
         # Skip some entries to make data more realistic
         if random.random() < 0.2:
             continue
-        
+
         # Generate random data
         check_date = (today - timedelta(weeks=i, days=random.randint(0, 6))).strftime('%Y-%m-%d')
         oil_level_ok = 1 if random.random() > 0.2 else 0
         oil_condition_ok = 1 if random.random() > 0.2 else 0
         oil_filter_ok = 1 if random.random() > 0.2 else 0
         pump_temp = random.uniform(60, 85)
-        
+
         # Determine service based on conditions
         if not oil_level_ok and not oil_condition_ok:
             service = "Drain & Replace Oil"
@@ -127,7 +123,7 @@ for equipment_id, _, _, _, _ in equipment_data:
             service = "Replace Filter"
         else:
             service = random.choice(services)
-        
+
         maintenance_logs.append((
             equipment_id,
             work_week,
@@ -144,7 +140,7 @@ for equipment_id, _, _, _, _ in equipment_data:
 # Insert maintenance logs
 cursor.executemany(
     """
-    INSERT INTO maintenance_log 
+    INSERT INTO maintenance_log
     (equipment_id, work_week, check_date, user_name, oil_level_ok, oil_condition_ok, oil_filter_ok, pump_temp, service, service_notes)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """,
