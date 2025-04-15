@@ -39,8 +39,6 @@ if hasattr(sys, '_MEIPASS'):
     logger.info(f"Using database at {db_path}")
 elif is_on_render:
     # When running on Render.com
-    # Use a directory that we have permission to access
-    # For Render, we'll use a subdirectory in the project folder
     render_data_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
     os.makedirs(render_data_dir, exist_ok=True)
     db_path = os.path.join(render_data_dir, "vacuum_pump_maintenance.db")
@@ -120,6 +118,48 @@ def health_check():
     """Health check endpoint for monitoring"""
     return jsonify({"status": "healthy", "timestamp": datetime.now().isoformat()})
 
+@app.route('/db-status')
+def db_status():
+    """Check database status and content"""
+    try:
+        # Get database path
+        db_path = app.config['SQLALCHEMY_DATABASE_URI']
+
+        # Count records in tables
+        equipment_count = Equipment.query.count()
+        logs_count = MaintenanceLog.query.count()
+
+        # Get sample data
+        equipment_sample = [{
+            'id': e.equipment_id,
+            'name': e.equipment_name,
+            'location': e.location
+        } for e in Equipment.query.limit(3).all()]
+
+        logs_sample = [{
+            'id': log.log_id,
+            'equipment_id': log.equipment_id,
+            'work_week': log.work_week,
+            'check_date': log.check_date.strftime('%Y-%m-%d') if log.check_date else None,
+            'pump_temp': log.pump_temp
+        } for log in MaintenanceLog.query.limit(3).all()]
+
+        return jsonify({
+            "status": "success",
+            "database_path": db_path,
+            "equipment_count": equipment_count,
+            "logs_count": logs_count,
+            "equipment_sample": equipment_sample,
+            "logs_sample": logs_sample,
+            "timestamp": datetime.now().isoformat()
+        })
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": str(e),
+            "timestamp": datetime.now().isoformat()
+        }), 500
+
 @app.route('/init-db')
 def init_db_route():
     """Initialize the database with sample data"""
@@ -130,6 +170,26 @@ def init_db_route():
         return jsonify({
             "status": "success",
             "message": "Database initialized with sample data",
+            "timestamp": datetime.now().isoformat()
+        })
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": str(e),
+            "timestamp": datetime.now().isoformat()
+        }), 500
+
+@app.route('/direct-init-db')
+def direct_init_db_route():
+    """Initialize the database directly with SQLite"""
+    try:
+        import subprocess
+        result = subprocess.run(['python', 'direct_db_init.py'], capture_output=True, text=True)
+        return jsonify({
+            "status": "success" if result.returncode == 0 else "error",
+            "message": "Database directly initialized with sample data",
+            "stdout": result.stdout,
+            "stderr": result.stderr,
             "timestamp": datetime.now().isoformat()
         })
     except Exception as e:
