@@ -98,11 +98,19 @@
                     </td>
                     <td class="date-col">
                         <input type="date" class="form-control" name="check_date"
-                               value="{{ log.check_date.strftime('%Y-%m-%d') if log and log.check_date else current_date }}" required>
+                               value="{{ log.check_date.strftime('%Y-%m-%d') if log and log.check_date else current_date }}" readonly>
+                        <input type="hidden" name="check_date_hidden"
+                               value="{{ log.check_date.strftime('%Y-%m-%d') if log and log.check_date else current_date }}">
                     </td>
                     <td class="employee-col">
-                        <input type="text" class="form-control form-control-wide" name="user_name"
-                               value="{{ log.user_name if log and log.user_name else '' }}">
+                        <input type="text" class="form-control form-control-wide employee-input" name="user_name"
+                               value="{{ log.user_name if log and log.user_name else '' }}"
+                               data-equipment-id="{{ equipment.equipment_id }}"
+                               data-pump-owner="{{ equipment.pump_owner }}"
+                               list="employee-options-{{ equipment.equipment_id }}">
+                        <datalist id="employee-options-{{ equipment.equipment_id }}">
+                            <!-- Will be populated via JavaScript -->
+                        </datalist>
                     </td>
                     <td class="checkbox-col">
                         <div class="form-check d-flex justify-content-center">
@@ -132,10 +140,17 @@
                                value="{{ log.pump_temp if log and log.pump_temp }}">
                     </td>
                     <td class="service-col">
-                        <select class="form-select" name="service">
+                        <select class="form-select service-select" name="service">
                             <option value="None Required" {% if not log or log.service == 'None Required' %}selected{% endif %}>None Required</option>
                             <option value="Add Oil" {% if log and log.service == 'Add Oil' %}selected{% endif %}>Add Oil</option>
                             <option value="Drain & Replace Oil" {% if log and log.service == 'Drain & Replace Oil' %}selected{% endif %}>Drain & Replace Oil</option>
+                            <option value="Swap Pump for Spare" {% if log and log.service == 'Swap Pump for Spare' %}selected{% endif %}>Swap Pump for Spare</option>
+                            <option value="Drain Oil Filter" {% if log and log.service == 'Drain Oil Filter' %}selected{% endif %}>Drain Oil Filter</option>
+                            <option value="Other (see 'Service Notes')" {% if log and log.service == "Other (see 'Service Notes')" %}selected{% endif %}>Other (see 'Service Notes')</option>
+                            {% if log and log.service not in ['None Required', 'Add Oil', 'Drain & Replace Oil', 'Swap Pump for Spare', 'Drain Oil Filter', "Other (see 'Service Notes')"] %}
+                            <option value="{{ log.service }}" selected>{{ log.service }}</option>
+                            {% endif %}
+                            <option value="custom">Add New Service Type...</option>
                         </select>
                     </td>
                     <td class="notes-col">
@@ -191,6 +206,86 @@
 
         updateStickyColumnColors();
         document.querySelector('.table-container').addEventListener('scroll', updateStickyColumnColors);
+
+        // Handle service dropdowns
+        const serviceSelects = document.querySelectorAll('.service-select');
+
+        // Fetch service options from API
+        fetch('/api/dropdown-options/service')
+            .then(response => response.json())
+            .then(services => {
+                // Store services for later use with custom option
+                window.serviceOptions = services;
+            })
+            .catch(error => console.error('Error fetching service options:', error));
+
+        serviceSelects.forEach(select => {
+            select.addEventListener('change', function() {
+                if (this.value === 'custom') {
+                    // Prompt user for custom service type
+                    const customService = prompt('Enter new service type:');
+                    if (customService && customService.trim() !== '') {
+                        // Add the new option
+                        const newOption = document.createElement('option');
+                        newOption.value = customService;
+                        newOption.textContent = customService;
+
+                        // Insert before the custom option
+                        const customOption = this.querySelector('option[value="custom"]');
+                        this.insertBefore(newOption, customOption);
+
+                        // Select the new option
+                        this.value = customService;
+
+                        // Add hidden field for the custom service
+                        const hiddenInput = document.createElement('input');
+                        hiddenInput.type = 'hidden';
+                        hiddenInput.name = 'custom_service';
+                        hiddenInput.value = customService;
+                        this.parentNode.appendChild(hiddenInput);
+                    } else {
+                        // If canceled or empty, revert to first option
+                        this.selectedIndex = 0;
+                    }
+                }
+            });
+        });
+
+        // Handle employee fields
+        const employeeInputs = document.querySelectorAll('.employee-input');
+
+        // Fetch employee options from API
+        fetch('/api/dropdown-options/user_name')
+            .then(response => response.json())
+            .then(employees => {
+                // Populate datalists for each employee input
+                employeeInputs.forEach(input => {
+                    const datalistId = input.getAttribute('list');
+                    const datalist = document.getElementById(datalistId);
+
+                    // Clear existing options
+                    datalist.innerHTML = '';
+
+                    // Add options from API
+                    employees.forEach(employee => {
+                        const option = document.createElement('option');
+                        option.value = employee;
+                        datalist.appendChild(option);
+                    });
+                });
+            })
+            .catch(error => console.error('Error fetching employee options:', error));
+
+        // Auto-fill employee with pump owner on first edit if empty
+        employeeInputs.forEach(input => {
+            // Only auto-fill if the field is empty
+            if (!input.value || input.value.trim() === '') {
+                const pumpOwner = input.getAttribute('data-pump-owner');
+                if (pumpOwner && pumpOwner.trim() !== '') {
+                    input.value = pumpOwner;
+                }
+            }
+        });
     });
 </script>
 {% endblock %}

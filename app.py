@@ -341,6 +341,21 @@ def weekly_log():
 
         work_week = request.args.get('work_week', current_work_week)
 
+        # Check if we need to reset the weekly log
+        # If the requested work week is the current week, check if we need to reset
+        if work_week == current_work_week:
+            # Get the most recent log for this week
+            most_recent_log = MaintenanceLog.query.filter_by(work_week=work_week).order_by(MaintenanceLog.check_date.desc()).first()
+
+            # If there's a log and it's from a previous week, we should reset
+            if most_recent_log and most_recent_log.check_date.isocalendar()[1] != today.isocalendar()[1]:
+                # Delete all logs for this week to reset
+                logs_to_delete = MaintenanceLog.query.filter_by(work_week=work_week).all()
+                for log in logs_to_delete:
+                    db.session.delete(log)
+                db.session.commit()
+                flash(f"Weekly log has been reset for {work_week}", "info")
+
         equipment_list = Equipment.query.order_by(Equipment.equipment_id).all()
 
         existing_logs = {}
@@ -467,15 +482,22 @@ def edit_maintenance_log(log_id):
                 temp_value = request.form.get('pump_temp')
                 log.pump_temp = parse_temperature(temp_value)
 
-                log.service = request.form.get('service')
+                # Handle custom service option
+                service = request.form.get('service', 'None Required')
+                if service == 'custom':
+                    # Get the custom service value from a hidden field or prompt
+                    custom_service = request.form.get('custom_service', '')
+                    if custom_service and custom_service.strip() != '':
+                        service = custom_service
+                    else:
+                        service = 'None Required'
+
+                log.service = service
                 log.service_notes = request.form.get('service_notes')
                 log.user_name = request.form.get('user_name')
 
-                if request.form.get('check_date'):
-                    try:
-                        log.check_date = datetime.strptime(request.form.get('check_date'), '%Y-%m-%d').date()
-                    except ValueError:
-                        flash("Invalid date format. Please use YYYY-MM-DD format.", "warning")
+                # We don't allow changing the check date
+                # The check_date field is readonly in the form
 
                 db.session.commit()
                 flash('Maintenance log updated successfully', 'success')
@@ -533,16 +555,38 @@ def equipment_delete_multiple():
 @app.route('/api/dropdown-options/<field>')
 def dropdown_options(field):
     """Get unique values for dropdown fields from existing records"""
-    valid_fields = ['pump_model', 'oil_type', 'pump_owner']
+    valid_fields = ['pump_model', 'oil_type', 'pump_owner', 'service', 'user_name']
 
     if field not in valid_fields:
         return jsonify([])
 
     try:
-        values = db.session.query(getattr(Equipment, field)).distinct().all()
-        values = [val[0] for val in values if val[0] is not None]
-        values.sort()
+        if field in ['pump_model', 'oil_type', 'pump_owner']:
+            values = db.session.query(getattr(Equipment, field)).distinct().all()
+            values = [val[0] for val in values if val[0] is not None]
+        elif field == 'service':
+            # Get standard service options plus any custom ones from the database
+            standard_options = [
+                'None Required', 'Add Oil', 'Drain & Replace Oil',
+                'Swap Pump for Spare', 'Drain Oil Filter', "Other (see 'Service Notes')"
+            ]
+            custom_values = db.session.query(MaintenanceLog.service).distinct().all()
+            custom_values = [val[0] for val in custom_values if val[0] is not None
+                            and val[0] not in standard_options]
+            values = standard_options + custom_values
+        elif field == 'user_name':
+            # Get unique user names from maintenance logs
+            user_values = db.session.query(MaintenanceLog.user_name).distinct().all()
+            user_values = [val[0] for val in user_values if val[0] is not None and val[0].strip() != '']
 
+            # Also include pump owners as potential employees
+            owner_values = db.session.query(Equipment.pump_owner).distinct().all()
+            owner_values = [val[0] for val in owner_values if val[0] is not None and val[0].strip() != '']
+
+            # Combine and remove duplicates
+            values = list(set(user_values + owner_values))
+
+        values.sort()
         return jsonify(values)
     except Exception as e:
         logger.error(f"Error getting dropdown options for {field}: {e}")
@@ -586,14 +630,23 @@ def save_equipment_log(equipment_id, work_week):
             work_week=work_week
         ).first()
 
+        # Use the hidden or visible check_date field
         check_date_str = request.form.get('check_date')
+        if not check_date_str or check_date_str.strip() == '':
+            check_date_str = request.form.get('check_date_hidden')
+
         try:
             check_date = datetime.strptime(check_date_str, '%Y-%m-%d').date()
         except ValueError:
             flash(f"Invalid date format: {check_date_str}. Please use YYYY-MM-DD format.", "danger")
             return redirect(url_for('weekly_log', work_week=work_week))
 
+        # Get user_name from form, or use pump_owner if this is a new log
         user_name = request.form.get('user_name', '')
+        if not existing_log and (not user_name or user_name.strip() == ''):
+            # Auto-fill with pump owner for first edit
+            user_name = equipment.pump_owner if equipment.pump_owner else ''
+
         oil_level_ok = 'oil_level_ok' in request.form
         oil_condition_ok = 'oil_condition_ok' in request.form
         oil_filter_ok = 'oil_filter_ok' in request.form
@@ -601,7 +654,16 @@ def save_equipment_log(equipment_id, work_week):
         temp_value = request.form.get('pump_temp')
         pump_temp = parse_temperature(temp_value)
 
+        # Handle custom service option
         service = request.form.get('service', 'None Required')
+        if service == 'custom':
+            # Get the custom service value from a hidden field or prompt
+            custom_service = request.form.get('custom_service', '')
+            if custom_service and custom_service.strip() != '':
+                service = custom_service
+            else:
+                service = 'None Required'
+
         service_notes = request.form.get('service_notes', '')
 
         if existing_log:
