@@ -18,6 +18,8 @@ services:
         fromDatabase:
           name: vacuum-pump-db
           property: connectionString
+      - key: SQLALCHEMY_ECHO
+        value: "true"
     # Add a health check to ensure the app is running correctly
     healthCheckPath: /
     # Add automatic database initialization on deploy

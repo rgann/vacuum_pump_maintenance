@@ -13,6 +13,6 @@ echo "DATABASE_URL exists: $(if [ -n "$DATABASE_URL" ]; then echo "yes"; else ec
 
 # We don't initialize the database here anymore
 # Database initialization happens in initialDeployHook in render.yaml
-echo "Database will be initialized after deployment"
+echo "Database will be initialized after deployment using seed_initial_data.py data"
 
 echo "Build phase completed successfully!"

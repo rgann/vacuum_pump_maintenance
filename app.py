@@ -320,9 +320,22 @@ def db_status():
                 "log_id": log.log_id,
                 "equipment_id": log.equipment_id,
                 "check_date": log.check_date.strftime('%Y-%m-%d') if log.check_date else None,
-                "user_name": log.user_name
+                "user_name": log.user_name,
+                "service": log.service
             } for log in MaintenanceLog.query.limit(3).all()] if maintenance_count > 0 else []
         }
+
+        # Add information about seed_initial_data.py
+        try:
+            from seed_initial_data import equipment_data, log_data
+            db_info["seed_data"] = {
+                "equipment_count": len(equipment_data),
+                "log_count": len(log_data)
+            }
+        except Exception as e:
+            db_info["seed_data"] = {
+                "error": str(e)
+            }
 
         return jsonify({
             "status": "success",
