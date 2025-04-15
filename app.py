@@ -32,31 +32,46 @@ logger = logging.getLogger(__name__)
 print(f"Environment variables: DATABASE_URL={os.environ.get('DATABASE_URL')}, RENDER={os.environ.get('RENDER')}")
 logger.info(f"Environment variables: DATABASE_URL={os.environ.get('DATABASE_URL')}, RENDER={os.environ.get('RENDER')}")
 
-if os.environ.get('DATABASE_URL'):
-    # Use PostgreSQL database URL provided by Render
-    database_url = os.environ.get('DATABASE_URL')
-    # Render uses postgres:// but SQLAlchemy requires postgresql://
-    if database_url.startswith('postgres://'):
-        database_url = database_url.replace('postgres://', 'postgresql://', 1)
+try:
+    if os.environ.get('DATABASE_URL'):
+        # Use PostgreSQL database URL provided by Render
+        database_url = os.environ.get('DATABASE_URL')
+        # Render uses postgres:// but SQLAlchemy requires postgresql://
+        if database_url.startswith('postgres://'):
+            database_url = database_url.replace('postgres://', 'postgresql://', 1)
 
-    # Set the database URI to the PostgreSQL URL
-    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
-    logger.info(f"Using PostgreSQL database with URL: {database_url.split('@')[0]}@...")
-    print(f"Using PostgreSQL database with URL: {database_url.split('@')[0]}@...")
-else:
-    # Local development - use SQLite
-    db_dir = os.path.abspath(os.path.dirname(__file__))
-    db_path = os.path.join(db_dir, "vacuum_pump_maintenance.db")
+        # Set the database URI to the PostgreSQL URL
+        app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+        logger.info(f"Using PostgreSQL database with URL: {database_url.split('@')[0]}@...")
+        print(f"Using PostgreSQL database with URL: {database_url.split('@')[0]}@...")
+    else:
+        # Local development - use SQLite
+        db_dir = os.path.abspath(os.path.dirname(__file__))
+        db_path = os.path.join(db_dir, "vacuum_pump_maintenance.db")
 
-    # Log the database path
-    print(f"Using SQLite database at: {db_path}")
-    logger.info(f"Using SQLite database at: {db_path}")
+        # Log the database path
+        print(f"Using SQLite database at: {db_path}")
+        logger.info(f"Using SQLite database at: {db_path}")
 
-    # Set the database URI to SQLite
-    app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
+        # Set the database URI to SQLite
+        app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
 
-# Enable SQLAlchemy echo for debugging
-app.config['SQLALCHEMY_ECHO'] = True
+    # Enable SQLAlchemy echo for debugging
+    app.config['SQLALCHEMY_ECHO'] = True
+
+    # Set a longer timeout for database operations
+    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+        'pool_timeout': 60,
+        'pool_recycle': 3600,
+        'pool_pre_ping': True
+    }
+
+    # Disable track modifications to improve performance
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+except Exception as e:
+    logger.error(f"Error configuring database: {e}")
+    print(f"Error configuring database: {e}")
 
 db = SQLAlchemy(app)
 
@@ -129,7 +144,38 @@ def index():
 @app.route('/health')
 def health_check():
     """Health check endpoint for monitoring"""
-    return jsonify({"status": "healthy", "timestamp": datetime.now().isoformat()})
+    try:
+        # Check database connection
+        db_ok = False
+        error_msg = None
+        try:
+            # Try to execute a simple query
+            db.session.execute('SELECT 1').scalar()
+            db_ok = True
+        except Exception as e:
+            error_msg = str(e)
+
+        # Get environment info
+        env_info = {
+            'DATABASE_URL': 'Present' if os.environ.get('DATABASE_URL') else 'Missing',
+            'RENDER': os.environ.get('RENDER'),
+            'SQLALCHEMY_DATABASE_URI': app.config.get('SQLALCHEMY_DATABASE_URI', 'Not set').split('@')[0] + '@...' if '@' in app.config.get('SQLALCHEMY_DATABASE_URI', '') else app.config.get('SQLALCHEMY_DATABASE_URI', 'Not set'),
+            'SQLALCHEMY_ECHO': app.config.get('SQLALCHEMY_ECHO', False)
+        }
+
+        return jsonify({
+            "status": "healthy",
+            "database_ok": db_ok,
+            "database_error": error_msg,
+            "environment": env_info,
+            "timestamp": datetime.now().isoformat()
+        })
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "error": str(e),
+            "timestamp": datetime.now().isoformat()
+        }), 500
 
 # Removed duplicate db_status route - using the more detailed version below
 

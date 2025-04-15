@@ -6,7 +6,7 @@ services:
       pip install -r requirements.txt
       chmod +x render_build.sh
       ./render_build.sh
-    startCommand: gunicorn app:app
+    startCommand: gunicorn app:app --log-level debug --timeout 120
     envVars:
       - key: PYTHON_VERSION
         value: 3.9.0
@@ -23,7 +23,9 @@ services:
     # Add a health check to ensure the app is running correctly
     healthCheckPath: /
     # Add automatic database initialization on deploy
-    initialDeployHook: python db_init.py
+    initialDeployHook: |
+      chmod +x init_deploy.sh
+      ./init_deploy.sh
 
 # A PostgreSQL database
 databases:
