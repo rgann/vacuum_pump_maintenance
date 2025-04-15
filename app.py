@@ -202,9 +202,11 @@ def emergency_db_init():
         CREATE TABLE IF NOT EXISTS equipment (
             equipment_id INTEGER PRIMARY KEY,
             equipment_name TEXT NOT NULL,
-            location TEXT,
-            model TEXT,
-            serial_number TEXT
+            pump_model TEXT,
+            oil_type TEXT,
+            pump_owner TEXT,
+            status TEXT DEFAULT 'active',
+            notes TEXT
         )
         ''')
 
@@ -236,23 +238,23 @@ def emergency_db_init():
                 "timestamp": datetime.now().isoformat()
             })
 
-        # Sample equipment data
+        # Sample equipment data (equipment_id, equipment_name, pump_model, oil_type, pump_owner, status, notes)
         equipment_data = [
-            (1, "JR Intake GB", "Building A", "JR-2000", "JR2023001"),
-            (2, "Spot/Sonic Weld GB", "Building A", "SW-500", "SW2023002"),
-            (3, "Elyte GB", "Building B", "EL-1000", "EL2023003"),
-            (4, "Chem GB 005", "Building B", "CG-005", "CG2023004"),
-            (5, "Chem GB 006", "Building C", "CG-006", "CG2023005"),
-            (6, "GCMS", "Building C", "GC-2000", "GC2023006"),
-            (7, "GCMS panel", "Building D", "GCP-100", "GCP2023007"),
-            (8, "Gas Pump/Goop Transfer", "Building D", "GP-500", "GP2023008"),
-            (9, "Jupiter", "Building E", "JP-1000", "JP2023009"),
-            (10, "Olympus", "Building E", "OL-2000", "OL2023010")
+            (1, "JR Intake GB", "JR-2000", "Synthetic 20W", "Engineering", "active", "Main intake pump"),
+            (2, "Spot/Sonic Weld GB", "SW-500", "Mineral 10W", "Production", "active", "Requires weekly checks"),
+            (3, "Elyte GB", "EL-1000", "Synthetic 30W", "R&D", "active", "New installation"),
+            (4, "Chem GB 005", "CG-005", "Synthetic 20W", "Chemistry", "active", "Sensitive to temperature"),
+            (5, "Chem GB 006", "CG-006", "Synthetic 20W", "Chemistry", "active", "Backup for CG-005"),
+            (6, "GCMS", "GC-2000", "Mineral 15W", "Analytics", "active", "Critical system"),
+            (7, "GCMS panel", "GCP-100", "Mineral 15W", "Analytics", "active", "Connected to GCMS"),
+            (8, "Gas Pump/Goop Transfer", "GP-500", "Synthetic 40W", "Production", "active", "High temperature operation"),
+            (9, "Jupiter", "JP-1000", "Synthetic 20W", "R&D", "active", "Experimental setup"),
+            (10, "Olympus", "OL-2000", "Mineral 10W", "Engineering", "active", "Main production line")
         ]
 
         # Insert equipment data
         cursor.executemany(
-            "INSERT INTO equipment (equipment_id, equipment_name, location, model, serial_number) VALUES (?, ?, ?, ?, ?)",
+            "INSERT INTO equipment (equipment_id, equipment_name, pump_model, oil_type, pump_owner, status, notes) VALUES (?, ?, ?, ?, ?, ?, ?)",
             equipment_data
         )
 
