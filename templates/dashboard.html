@@ -47,15 +47,26 @@
         </div>
     </div>
 
-    <!-- Service Distribution -->
-    <div class="service-chart-container">
+    <!-- Hall of Fame Leaderboard -->
+    <div class="hall-of-fame-container">
         <div class="card shadow h-100">
             <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold card-title-large">Service Distribution</h6>
+                <h6 class="m-0 font-weight-bold card-title-large">Hall of Fame</h6>
             </div>
-            <div class="card-body service-chart-body">
-                <div class="chart-pie service-chart-wrapper">
-                    <canvas id="serviceChart"></canvas>
+            <div class="card-body hall-of-fame-body">
+                <div class="hall-of-fame-wrapper">
+                    <table class="table table-dark table-striped hall-of-fame-table">
+                        <thead>
+                            <tr>
+                                <th class="text-center">Rank</th>
+                                <th class="text-center">Score</th>
+                                <th>Name</th>
+                            </tr>
+                        </thead>
+                        <tbody id="hallOfFameTableBody">
+                            <!-- Will be populated via JavaScript -->
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -81,13 +92,72 @@
             .then(response => response.json())
             .then(data => {
                 setupTemperatureChart(data);
-                setupServiceChart(data);
+                setupHallOfFame(data.hall_of_fame);
             })
             .catch(error => console.error('Error loading chart data:', error));
     });
-
-    // The setupTemperatureChart function is now loaded from temperature_chart.js
-
-    // The setupServiceChart function is now loaded from temperature_chart.js
+    
+    function setupHallOfFame(hallOfFameData) {
+        const tableBody = document.getElementById('hallOfFameTableBody');
+        if (!tableBody || !hallOfFameData) return;
+        
+        // Clear existing rows
+        tableBody.innerHTML = '';
+        
+        // Add arcade-style glow colors based on rank
+        const rankColors = [
+            '#FFD700', // Gold for 1st place
+            '#C0C0C0', // Silver for 2nd place
+            '#CD7F32', // Bronze for 3rd place
+            '#00FFFF', // Cyan for 4th place
+            '#FF00FF', // Magenta for 5th place
+            '#FFFF00', // Yellow for 6th place
+            '#00FF00', // Lime for 7th place
+            '#FF1493', // Deep Pink for 8th place
+            '#00BFFF', // Deep Sky Blue for 9th place
+            '#FF4500'  // Orange Red for 10th place
+        ];
+        
+        // Create rows for each entry
+        hallOfFameData.forEach((entry, index) => {
+            const row = document.createElement('tr');
+            
+            // Add glow effect based on rank
+            const rankColor = index < rankColors.length ? rankColors[index] : '#FFFFFF';
+            row.style.textShadow = `0 0 5px ${rankColor}`;
+            
+            // Create rank cell with medal emoji for top 3
+            const rankCell = document.createElement('td');
+            rankCell.className = 'text-center rank-cell';
+            
+            if (entry.rank === 1) {
+                rankCell.innerHTML = `<span class="medal gold">🏆 ${entry.rank}</span>`;
+            } else if (entry.rank === 2) {
+                rankCell.innerHTML = `<span class="medal silver">🥈 ${entry.rank}</span>`;
+            } else if (entry.rank === 3) {
+                rankCell.innerHTML = `<span class="medal bronze">🥉 ${entry.rank}</span>`;
+            } else {
+                rankCell.innerHTML = `<span>${entry.rank}</span>`;
+            }
+            
+            // Create score cell
+            const scoreCell = document.createElement('td');
+            scoreCell.className = 'text-center score-cell';
+            scoreCell.textContent = entry.score;
+            
+            // Create name cell
+            const nameCell = document.createElement('td');
+            nameCell.className = 'name-cell';
+            nameCell.textContent = entry.name;
+            
+            // Add cells to row
+            row.appendChild(rankCell);
+            row.appendChild(scoreCell);
+            row.appendChild(nameCell);
+            
+            // Add row to table
+            tableBody.appendChild(row);
+        });
+    }
 </script>
 {% endblock %}

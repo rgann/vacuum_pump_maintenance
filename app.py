@@ -709,6 +709,23 @@ def save_equipment_log(equipment_id, work_week):
             flash(f'Maintenance log for {equipment.equipment_name} created successfully', 'success')
 
         db.session.commit()
+
+        # Update Hall of Fame scores when a maintenance log is saved
+        try:
+            # If the user is a pump owner, update their score
+            if user_name and user_name.strip() != '':
+                # Check if this user is a pump owner
+                is_pump_owner = Equipment.query.filter(Equipment.pump_owner == user_name).first() is not None
+
+                if is_pump_owner:
+                    logger.info(f"Updating Hall of Fame score for pump owner: {user_name}")
+                    # The Hall of Fame scores will be recalculated on the next dashboard view
+                    # No need to do anything else here
+        except Exception as e:
+            logger.error(f"Error updating Hall of Fame score: {e}")
+            # Don't let this error affect the main functionality
+            pass
+
         return redirect(url_for('weekly_log', work_week=work_week))
 
     except Exception as e:
@@ -774,23 +791,56 @@ def chart_data():
             }]
         }
 
-        service_counts = db.session.query(
-            MaintenanceLog.service,
-            db.func.count(MaintenanceLog.log_id)
-        ).group_by(MaintenanceLog.service).all()
+        # Calculate Hall of Fame scores
+        # Get all pump owners
+        pump_owners = db.session.query(Equipment.pump_owner).distinct().all()
+        pump_owners = [owner[0] for owner in pump_owners if owner[0] is not None and owner[0].strip() != '']
 
-        service_data = {
-            'labels': [item[0] for item in service_counts],
-            'datasets': [{
-                'data': [item[1] for item in service_counts],
-                'backgroundColor': colors[:len(service_counts)]
-            }]
-        }
+        # Calculate scores for each pump owner
+        hall_of_fame = []
+        for owner in pump_owners:
+            # Count equipment owned by this owner
+            owned_equipment_count = Equipment.query.filter(Equipment.pump_owner == owner).count()
+            if owned_equipment_count == 0:
+                continue
+
+            # Get all maintenance logs by this owner
+            owner_logs = MaintenanceLog.query.join(Equipment).filter(
+                MaintenanceLog.user_name == owner
+            ).all()
+
+            # Group logs by week to calculate weekly scores
+            weekly_scores = {}
+            for log in owner_logs:
+                week = log.work_week
+                if week not in weekly_scores:
+                    weekly_scores[week] = set()  # Use set to avoid counting the same equipment twice in a week
+                weekly_scores[week].add(log.equipment_id)
+
+            # Calculate total score: sum of (equipment maintained * 10 / equipment owned) for each week
+            total_score = 0
+            for week, equipment_ids in weekly_scores.items():
+                weekly_score = len(equipment_ids) * 10 / owned_equipment_count
+                total_score += weekly_score
+
+            hall_of_fame.append({
+                'name': owner,
+                'score': round(total_score, 1),
+                'equipment_owned': owned_equipment_count,
+                'weeks_active': len(weekly_scores)
+            })
+
+        # Sort by score (highest first)
+        hall_of_fame.sort(key=lambda x: x['score'], reverse=True)
+
+        # Add rank
+        for i, entry in enumerate(hall_of_fame):
+            entry['rank'] = i + 1
 
         return jsonify({
             'temperature_chart': chart_data,
             'maintenance_chart': maintenance_data,
-            'service_chart': service_data
+            'hall_of_fame': hall_of_fame
         })
     except Exception as e:
         logger.error(f"Error generating chart data: {e}")
