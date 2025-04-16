@@ -33,7 +33,11 @@ def setup_auth(app):
         client_id=os.environ.get('GOOGLE_CLIENT_ID', ''),
         client_secret=os.environ.get('GOOGLE_CLIENT_SECRET', ''),
         server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
-        client_kwargs={'scope': 'openid email profile'},
+        client_kwargs={
+            'scope': 'openid email profile',
+            'token_endpoint_auth_method': 'client_secret_post'
+        },
+        api_base_url='https://www.googleapis.com/oauth2/v3/',
     )
 
     # User loader for Flask-Login
@@ -91,11 +95,12 @@ def setup_auth(app):
             logger.info(f"Authorization request received. Query params: {request.args}")
 
             # Get token from Google
-            token = oauth.google.authorize_access_token()
-            logger.info("Successfully obtained access token")
+            token_data = oauth.google.authorize_access_token()
+            logger.info(f"Successfully obtained access token: {token_data.get('token_type', 'unknown')} token")
 
             # Get user info from Google
-            resp = oauth.google.get('userinfo')
+            logger.info("Attempting to get user info from Google")
+            resp = oauth.google.get('https://www.googleapis.com/oauth2/v3/userinfo')
             user_info = resp.json()
             logger.info(f"Retrieved user info for: {user_info.get('email', 'unknown')}")
 
