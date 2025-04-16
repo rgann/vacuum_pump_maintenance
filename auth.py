@@ -4,6 +4,7 @@ Authentication module for the Vacuum Pump Maintenance application
 import os
 import json
 import logging
+import sys
 from flask import Flask, redirect, url_for, session, request, jsonify, flash
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from authlib.integrations.flask_client import OAuth
@@ -31,11 +32,7 @@ def setup_auth(app):
         name='google',
         client_id=os.environ.get('GOOGLE_CLIENT_ID', ''),
         client_secret=os.environ.get('GOOGLE_CLIENT_SECRET', ''),
-        access_token_url='https://accounts.google.com/o/oauth2/token',
-        access_token_params=None,
-        authorize_url='https://accounts.google.com/o/oauth2/auth',
-        authorize_params=None,
-        api_base_url='https://www.googleapis.com/oauth2/v1/',
+        server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
         client_kwargs={'scope': 'openid email profile'},
     )
 
@@ -59,9 +56,24 @@ def setup_auth(app):
     # Add login route
     @app.route('/login')
     def login():
-        # Redirect to Google OAuth
-        redirect_uri = url_for('authorize', _external=True)
-        return oauth.google.authorize_redirect(redirect_uri)
+        # Log login attempt
+        logger.info("Login attempt initiated")
+
+        try:
+            # Get the redirect URI
+            redirect_uri = url_for('authorize', _external=True)
+            logger.info(f"Redirect URI: {redirect_uri}")
+
+            # Log OAuth client configuration
+            client_id = os.environ.get('GOOGLE_CLIENT_ID', '')
+            logger.info(f"Using client ID: {client_id[:5]}...{client_id[-5:] if client_id else ''}")
+
+            # Redirect to Google OAuth
+            return oauth.google.authorize_redirect(redirect_uri)
+        except Exception as e:
+            logger.error(f"Error in login route: {str(e)}", exc_info=True)
+            flash(f"Login configuration error: {str(e)}", "danger")
+            return redirect(url_for('index'))
 
     # Add logout route
     @app.route('/logout')
@@ -153,14 +165,36 @@ def setup_auth(app):
     @app.route('/oauth-debug')
     def oauth_debug():
         """Debug endpoint to check OAuth configuration"""
-        config = {
-            'client_id_set': bool(os.environ.get('GOOGLE_CLIENT_ID')),
-            'client_secret_set': bool(os.environ.get('GOOGLE_CLIENT_SECRET')),
-            'redirect_uri': url_for('authorize', _external=True),
-            'allowed_domains': os.environ.get('ALLOWED_EMAIL_DOMAINS', '').split(','),
-            'admin_emails': os.environ.get('ADMIN_EMAILS', '').split(',')
-        }
-        return jsonify(config)
+        try:
+            # Get client configuration
+            client_id = os.environ.get('GOOGLE_CLIENT_ID', '')
+            client_secret = os.environ.get('GOOGLE_CLIENT_SECRET', '')
+
+            # Get OAuth client metadata
+            metadata = None
+            try:
+                metadata = oauth.google.load_server_metadata()
+            except Exception as e:
+                metadata = {"error": str(e)}
+
+            config = {
+                'client_id_set': bool(client_id),
+                'client_id_preview': f"{client_id[:5]}...{client_id[-5:]}" if client_id else None,
+                'client_secret_set': bool(client_secret),
+                'redirect_uri': url_for('authorize', _external=True),
+                'allowed_domains': os.environ.get('ALLOWED_EMAIL_DOMAINS', '').split(','),
+                'admin_emails': os.environ.get('ADMIN_EMAILS', '').split(','),
+                'server_metadata': metadata,
+                'flask_env': os.environ.get('FLASK_ENV', 'development'),
+                'request_url': request.url,
+                'base_url': request.url_root
+            }
+            return jsonify(config)
+        except Exception as e:
+            return jsonify({
+                'error': str(e),
+                'traceback': str(sys.exc_info())
+            })
 
     # Add auth routes to app context
     app.login = login
