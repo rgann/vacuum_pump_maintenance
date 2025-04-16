@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block title %}Login - Vacuum Pump Maintenance{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-xl-10 col-lg-12 col-md-9">
+            <div class="card o-hidden border-0 shadow-lg my-5">
+                <div class="card-body p-0">
+                    <div class="row">
+                        <div class="col-lg-6 d-none d-lg-block bg-login-image">
+                            <!-- Background image set in CSS -->
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="p-5">
+                                <div class="text-center">
+                                    <h1 class="h4 text-gray-900 mb-4">Vacuum Pump Maintenance</h1>
+                                </div>
+                                <div class="text-center mb-4">
+                                    <p>Track and manage maintenance for vacuum pumps</p>
+                                </div>
+                                <hr>
+                                <div class="text-center">
+                                    <a href="{{ url_for('login') }}" class="btn btn-primary btn-user btn-block">
+                                        <i class="fab fa-google fa-fw"></i> Login with Google
+                                    </a>
+                                </div>
+                                <hr>
+                                <div class="text-center">
+                                    <p class="small">This application requires authentication.</p>
+                                    <p class="small">Please log in with your Google account to continue.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .bg-login-image {
+        background: url('https://source.unsplash.com/random/600x800/?vacuum,pump,machinery');
+        background-position: center;
+        background-size: cover;
+    }
+</style>
+{% endblock %}

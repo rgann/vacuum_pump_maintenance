@@ -23,6 +23,25 @@
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
+            <div class="d-flex ms-auto">
+                {% if current_user.is_authenticated %}
+                <div class="dropdown">
+                    <button class="btn btn-dark dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        {% if current_user.picture %}
+                        <img src="{{ current_user.picture }}" alt="{{ current_user.name }}" class="rounded-circle" width="24" height="24">
+                        {% else %}
+                        <i class="bi bi-person-circle"></i>
+                        {% endif %}
+                        {{ current_user.name }}
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                        <li><a class="dropdown-item" href="{{ url_for('logout') }}"><i class="bi bi-box-arrow-right"></i> Logout</a></li>
+                    </ul>
+                </div>
+                {% else %}
+                <a href="{{ url_for('login') }}" class="btn btn-outline-light"><i class="bi bi-box-arrow-in-right"></i> Login</a>
+                {% endif %}
+            </div>
         </div>
     </nav>
 
@@ -102,7 +121,6 @@
                 }
             });
 
-            // Auto-dismiss flash messages
             const flashMessages = document.querySelectorAll('.alert:not(.alert-danger)');
             flashMessages.forEach(message => {
                 setTimeout(() => {
@@ -113,7 +131,6 @@
                 }, 5000);
             });
 
-            // Handle mobile sidebar toggle
             const sidebarToggle = document.querySelector('.navbar-toggler');
             if (sidebarToggle) {
                 sidebarToggle.addEventListener('click', function() {

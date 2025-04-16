@@ -1,6 +1,7 @@
 # app.py
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
 from flask_sqlalchemy import SQLAlchemy
+from flask_login import login_required, current_user
 from datetime import datetime, timedelta
 import sqlite3
 import os
@@ -21,8 +22,10 @@ def resource_path(relative_path):
     return os.path.join(base_path, relative_path)
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'yoshi_boy'
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'yoshi_boy')  # Use environment variable for security
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SESSION_TYPE'] = 'filesystem'
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)  # Session lasts for 7 days
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -81,6 +84,10 @@ except Exception as e:
     print(f"Error configuring database: {e}")
 
 db = SQLAlchemy(app)
+
+# Initialize authentication
+from auth import setup_auth
+login_manager = setup_auth(app)
 
 def get_work_week(date_obj=None):
     """Calculate the work week in YYYY-WW format."""
@@ -146,7 +153,11 @@ class MaintenanceLog(db.Model):
 
 @app.route('/')
 def index():
-    return redirect(url_for('dashboard'))
+    # If user is authenticated, redirect to dashboard
+    if current_user.is_authenticated:
+        return redirect(url_for('dashboard'))
+    # Otherwise show login page
+    return render_template('login.html')
 
 @app.route('/health')
 def health_check():
@@ -571,6 +582,7 @@ def db_status():
         }), 500
 
 @app.route('/dashboard')
+@login_required
 def dashboard():
     try:
         today = datetime.now()
@@ -610,6 +622,7 @@ def dashboard():
         return render_template('error.html', error=str(e)), 500
 
 @app.route('/equipment')
+@login_required
 def equipment_list():
     try:
         equipment = Equipment.query.order_by(Equipment.equipment_id).all()
@@ -620,6 +633,7 @@ def equipment_list():
         return render_template('error.html', error=str(e)), 500
 
 @app.route('/equipment/<int:equipment_id>')
+@login_required
 def equipment_detail(equipment_id):
     try:
         equipment = Equipment.query.get_or_404(equipment_id)
@@ -631,6 +645,7 @@ def equipment_detail(equipment_id):
         return redirect(url_for('equipment_list'))
 
 @app.route('/equipment/add', methods=['GET', 'POST'])
+@login_required
 def equipment_add():
     if request.method == 'POST':
         try:
@@ -674,6 +689,7 @@ def equipment_add():
         return redirect(url_for('equipment_list'))
 
 @app.route('/weekly-log', methods=['GET', 'POST'])
+@login_required
 def weekly_log():
     try:
         today = datetime.now()
@@ -779,6 +795,7 @@ def weekly_log():
         return redirect(url_for('dashboard'))
 
 @app.route('/maintenance/logs')
+@login_required
 def maintenance_logs():
     try:
         work_week = request.args.get('work_week', '')
@@ -823,6 +840,7 @@ def maintenance_logs():
 
 
 @app.route('/maintenance/log/<int:log_id>/edit', methods=['GET', 'POST'])
+@login_required
 def edit_maintenance_log(log_id):
     try:
         log = MaintenanceLog.query.get_or_404(log_id)
@@ -868,6 +886,7 @@ def edit_maintenance_log(log_id):
         return redirect(url_for('maintenance_logs'))
 
 @app.route('/maintenance/log/<int:log_id>/delete')
+@login_required
 def delete_maintenance_log(log_id):
     try:
         log = MaintenanceLog.query.get_or_404(log_id)
@@ -882,6 +901,7 @@ def delete_maintenance_log(log_id):
     return redirect(request.referrer or url_for('weekly_log'))
 
 @app.route('/equipment/delete-multiple', methods=['POST'])
+@login_required
 def equipment_delete_multiple():
     equipment_ids = request.form.getlist('equipment_ids')
 
@@ -947,6 +967,7 @@ def dropdown_options(field):
         return jsonify([])
 
 @app.route('/equipment/<int:equipment_id>/edit', methods=['GET', 'POST'])
+@login_required
 def equipment_edit(equipment_id):
     try:
         equipment = Equipment.query.get_or_404(equipment_id)
@@ -975,6 +996,7 @@ def equipment_edit(equipment_id):
         return redirect(url_for('equipment_list'))
 
 @app.route('/save_equipment_log/<int:equipment_id>/<work_week>', methods=['POST'])
+@login_required
 def save_equipment_log(equipment_id, work_week):
     try:
         equipment = Equipment.query.get_or_404(equipment_id)

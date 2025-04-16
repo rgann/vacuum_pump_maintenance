@@ -20,12 +20,30 @@ services:
           property: connectionString
       - key: SQLALCHEMY_ECHO
         value: "true"
+      # Authentication environment variables
+      - key: SECRET_KEY
+        generateValue: true
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: ALLOWED_EMAIL_DOMAINS
+        sync: false
+      - key: ADMIN_EMAILS
+        sync: false
     # Add a health check to ensure the app is running correctly
     healthCheckPath: /
-    # Add automatic database initialization on deploy
+    # Only check database status on deploy, don't initialize automatically
     initialDeployHook: |
-      chmod +x init_deploy.sh
-      ./init_deploy.sh
+      echo "Checking database status..."
+      python -c "from app import db, Equipment;
+      try:
+          count = Equipment.query.count()
+          print(f'Database already contains {count} equipment items. No initialization needed.')
+      except Exception as e:
+          print(f'Error checking database: {e}')
+          print('You may need to manually initialize the database by visiting /init-db endpoint.')
+      "
 
 # A PostgreSQL database
 databases:
