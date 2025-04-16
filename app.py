@@ -68,7 +68,11 @@ try:
         app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
             'pool_timeout': 60,
             'pool_recycle': 3600,
-            'pool_pre_ping': True
+            'pool_pre_ping': True,
+            'connect_args': {
+                'connect_timeout': 10,
+                'application_name': 'vacuum_pump_maintenance'
+            }
         }
     else:
         # SQLite-specific options

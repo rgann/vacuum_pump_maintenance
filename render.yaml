@@ -33,17 +33,10 @@ services:
         sync: false
     # Add a health check to ensure the app is running correctly
     healthCheckPath: /
-    # Only check database status on deploy, don't initialize automatically
+    # Run first_deploy.py to initialize the database on first deployment only
     initialDeployHook: |
-      echo "Checking database status..."
-      python -c "from app import db, Equipment;
-      try:
-          count = Equipment.query.count()
-          print(f'Database already contains {count} equipment items. No initialization needed.')
-      except Exception as e:
-          print(f'Error checking database: {e}')
-          print('You may need to manually initialize the database by visiting /init-db endpoint.')
-      "
+      echo "Running first deployment script..."
+      python first_deploy.py
 
 # A PostgreSQL database
 databases:
@@ -56,3 +49,5 @@ databases:
     # Ensure the database is created before the web service starts
     postProvisionCommands:
       - echo "Database provisioned successfully"
+    # Prevent database from being deleted on redeploy
+    preserveData: true
