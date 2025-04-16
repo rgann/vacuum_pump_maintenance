@@ -102,13 +102,25 @@ def setup_auth(app):
             logger.info("Attempting to get user info from Google")
             resp = oauth.google.get('https://www.googleapis.com/oauth2/v3/userinfo')
             user_info = resp.json()
-            logger.info(f"Retrieved user info for: {user_info.get('email', 'unknown')}")
 
-            # More detailed logging for debugging
-            logger.info(f"Full user info: {user_info}")
+            # Log the full response for debugging
+            logger.info(f"Full user info response: {user_info}")
+
+            # Extract user information with fallbacks
+            user_email = user_info.get('email', '')
+            user_sub = user_info.get('sub', '')  # 'sub' is the unique identifier in OpenID Connect
+            user_name = user_info.get('name', user_email.split('@')[0] if user_email else 'Unknown User')
+            user_picture = user_info.get('picture', '')
+
+            # Make sure we have the minimum required information
+            if not user_email or not user_sub:
+                logger.error(f"Missing required user information. Email: {bool(user_email)}, Sub: {bool(user_sub)}")
+                flash('Could not retrieve your account information from Google. Please try again.', 'danger')
+                return redirect(url_for('index'))
+
+            logger.info(f"Retrieved user info for: {user_email}")
 
             # Check if user email is allowed
-            user_email = user_info.get('email', '')
             if not is_allowed_email(user_email):
                 logger.warning(f"Unauthorized access attempt from email: {user_email}")
                 flash('Your email is not authorized to access this application.', 'danger')
@@ -116,12 +128,12 @@ def setup_auth(app):
 
             logger.info(f"User {user_email} authorized successfully")
 
-            # Create user object
+            # Create user object using 'sub' as the ID
             user = User(
-                id=user_info['id'],
-                email=user_info['email'],
-                name=user_info['name'],
-                picture=user_info.get('picture', '')
+                id=user_sub,  # Use 'sub' as the unique identifier
+                email=user_email,
+                name=user_name,
+                picture=user_picture
             )
 
             # Store user in session
