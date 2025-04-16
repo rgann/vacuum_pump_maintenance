@@ -221,26 +221,62 @@ def is_database_initialized():
 def init_db_route():
     """Initialize the database with sample data only if not already initialized"""
     try:
+        # Get database connection information
+        db_info = {
+            "database_type": "PostgreSQL" if "postgresql" in app.config['SQLALCHEMY_DATABASE_URI'] else "SQLite",
+            "connection": app.config['SQLALCHEMY_DATABASE_URI'].split('@')[0] + '@...' if '@' in app.config['SQLALCHEMY_DATABASE_URI'] else app.config['SQLALCHEMY_DATABASE_URI']
+        }
+
         # Check if database is already initialized
-        if is_database_initialized():
+        try:
+            equipment_count = Equipment.query.count()
+            if equipment_count > 0:
+                return jsonify({
+                    "status": "success",
+                    "message": f"Database already contains {equipment_count} equipment items. No action taken.",
+                    "database_info": db_info,
+                    "timestamp": datetime.now().isoformat()
+                })
+        except Exception as db_error:
+            # If we get an error, it might be because tables don't exist yet
+            logger.warning(f"Error checking database: {db_error}. Will attempt to create tables.")
+
+        # Create tables first
+        try:
+            db.create_all()
+            logger.info("Database tables created successfully")
+        except Exception as table_error:
+            return jsonify({
+                "status": "error",
+                "message": f"Failed to create database tables: {table_error}",
+                "database_info": db_info,
+                "timestamp": datetime.now().isoformat()
+            }), 500
+
+        # Now import and run the initialization function
+        try:
+            from db_init import create_sample_data
+            create_sample_data()
+
+            # Verify initialization was successful
+            equipment_count = Equipment.query.count()
             return jsonify({
                 "status": "success",
-                "message": "Database already initialized with data. No action taken.",
+                "message": f"Database initialized successfully with {equipment_count} equipment items",
+                "database_info": db_info,
                 "timestamp": datetime.now().isoformat()
             })
-
-        # Import here to avoid circular imports
-        from db_init import create_sample_data
-        create_sample_data()
-        return jsonify({
-            "status": "success",
-            "message": "Database initialized with sample data",
-            "timestamp": datetime.now().isoformat()
-        })
+        except Exception as init_error:
+            return jsonify({
+                "status": "error",
+                "message": f"Failed to initialize database with sample data: {init_error}",
+                "database_info": db_info,
+                "timestamp": datetime.now().isoformat()
+            }), 500
     except Exception as e:
         return jsonify({
             "status": "error",
-            "message": str(e),
+            "message": f"Unexpected error during database initialization: {e}",
             "timestamp": datetime.now().isoformat()
         }), 500
 
@@ -271,6 +307,180 @@ def direct_init_db_route():
             "message": str(e),
             "timestamp": datetime.now().isoformat()
         }), 500
+
+@app.route('/backup-db')
+def backup_db_route():
+    """Create a backup of the database"""
+    try:
+        from db_backup import backup_database
+        result = backup_database()
+
+        if result['status'] == 'success':
+            return jsonify({
+                "status": "success",
+                "message": f"Database backup created successfully with {result['equipment_count']} equipment records and {result['logs_count']} maintenance logs",
+                "file": result['file'],
+                "timestamp": datetime.now().isoformat()
+            })
+        else:
+            return jsonify({
+                "status": "error",
+                "message": f"Failed to create database backup: {result['message']}",
+                "timestamp": datetime.now().isoformat()
+            }), 500
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": f"Error creating database backup: {str(e)}",
+            "timestamp": datetime.now().isoformat()
+        }), 500
+
+@app.route('/list-backups')
+def list_backups_route():
+    """List all available database backups"""
+    try:
+        import os
+        backup_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'backups')
+
+        if not os.path.exists(backup_dir):
+            return jsonify({
+                "status": "success",
+                "message": "No backups found",
+                "backups": [],
+                "timestamp": datetime.now().isoformat()
+            })
+
+        backups = []
+        for filename in os.listdir(backup_dir):
+            if filename.startswith('db_backup_') and filename.endswith('.json'):
+                file_path = os.path.join(backup_dir, filename)
+                backups.append({
+                    "filename": filename,
+                    "path": file_path,
+                    "size": os.path.getsize(file_path),
+                    "created": datetime.fromtimestamp(os.path.getctime(file_path)).isoformat()
+                })
+
+        # Sort backups by creation time (newest first)
+        backups.sort(key=lambda x: x['created'], reverse=True)
+
+        return jsonify({
+            "status": "success",
+            "message": f"Found {len(backups)} backups",
+            "backups": backups,
+            "timestamp": datetime.now().isoformat()
+        })
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": f"Error listing backups: {str(e)}",
+            "timestamp": datetime.now().isoformat()
+        }), 500
+
+@app.route('/restore-db/<filename>')
+def restore_db_route(filename):
+    """Restore database from a backup file"""
+    try:
+        import os
+        backup_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'backups')
+        backup_file = os.path.join(backup_dir, filename)
+
+        if not os.path.exists(backup_file):
+            return jsonify({
+                "status": "error",
+                "message": f"Backup file not found: {filename}",
+                "timestamp": datetime.now().isoformat()
+            }), 404
+
+        # Create a backup before restoring
+        from db_backup import backup_database
+        backup_result = backup_database()
+
+        if backup_result['status'] == 'success':
+            logger.info(f"Created safety backup before restore: {backup_result['file']}")
+        else:
+            logger.warning(f"Failed to create safety backup before restore: {backup_result.get('message')}")
+
+        # Restore from backup
+        from db_backup import restore_database
+        result = restore_database(backup_file)
+
+        if result['status'] == 'success':
+            return jsonify({
+                "status": "success",
+                "message": f"Database restored successfully with {result['equipment_count']} equipment records and {result['logs_count']} maintenance logs",
+                "timestamp": datetime.now().isoformat()
+            })
+        else:
+            return jsonify({
+                "status": "error",
+                "message": f"Failed to restore database: {result['message']}",
+                "timestamp": datetime.now().isoformat()
+            }), 500
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": f"Error restoring database: {str(e)}",
+            "timestamp": datetime.now().isoformat()
+        }), 500
+
+# Schedule automatic backups
+@app.before_first_request
+def setup_scheduled_tasks():
+    """Set up scheduled tasks that run in the background"""
+    try:
+        import threading
+        import time
+
+        def scheduled_backup():
+            """Run a database backup every day"""
+            while True:
+                try:
+                    # Sleep for 24 hours
+                    time.sleep(24 * 60 * 60)
+
+                    # Run backup
+                    from db_backup import backup_database
+                    result = backup_database()
+
+                    if result['status'] == 'success':
+                        logger.info(f"Scheduled backup created successfully: {result['file']}")
+                    else:
+                        logger.error(f"Scheduled backup failed: {result.get('message')}")
+
+                    # Clean up old backups (keep only the 10 most recent)
+                    import os
+                    backup_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'backups')
+                    if os.path.exists(backup_dir):
+                        backups = []
+                        for filename in os.listdir(backup_dir):
+                            if filename.startswith('db_backup_') and filename.endswith('.json'):
+                                file_path = os.path.join(backup_dir, filename)
+                                backups.append({
+                                    "filename": filename,
+                                    "path": file_path,
+                                    "created": os.path.getctime(file_path)
+                                })
+
+                        # Sort backups by creation time (newest first)
+                        backups.sort(key=lambda x: x['created'], reverse=True)
+
+                        # Delete old backups
+                        for backup in backups[10:]:
+                            try:
+                                os.remove(backup['path'])
+                                logger.info(f"Deleted old backup: {backup['filename']}")
+                            except Exception as e:
+                                logger.error(f"Error deleting old backup {backup['filename']}: {e}")
+                except Exception as e:
+                    logger.error(f"Error in scheduled backup: {e}")
+
+        # Start the backup thread
+        backup_thread = threading.Thread(target=scheduled_backup, daemon=True)
+        backup_thread.start()
+        logger.info("Scheduled backup thread started")
+    except Exception as e:
+        logger.error(f"Error setting up scheduled tasks: {e}")
 
 @app.route('/emergency-db-init')
 def emergency_db_init():
