@@ -12,3 +12,5 @@ Flask-Login==0.6.2
 Authlib==1.2.1
 requests==2.31.0
 pyjwt==2.8.0
+supabase==1.0.3
+python-dotenv==1.0.0

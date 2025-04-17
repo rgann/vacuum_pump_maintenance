@@ -30,14 +30,28 @@ app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)  # Session lasts fo
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
+# Load environment variables from .env file
+from dotenv import load_dotenv
+load_dotenv()
+
+# Import Supabase configuration
+from supabase_config import get_db_connection_string
+
 # DATABASE CONFIGURATION
-# Check if running on Render (environment variable set by Render)
-print(f"Environment variables: DATABASE_URL={os.environ.get('DATABASE_URL')}, RENDER={os.environ.get('RENDER')}")
-logger.info(f"Environment variables: DATABASE_URL={os.environ.get('DATABASE_URL')}, RENDER={os.environ.get('RENDER')}")
+print("Configuring database connection...")
+logger.info("Configuring database connection...")
 
 try:
-    if os.environ.get('DATABASE_URL'):
-        # Use PostgreSQL database URL provided by Render
+    # Try to get Supabase connection string
+    supabase_db_url = get_db_connection_string()
+
+    if supabase_db_url:
+        # Use Supabase PostgreSQL database
+        app.config['SQLALCHEMY_DATABASE_URI'] = supabase_db_url
+        logger.info(f"Using Supabase PostgreSQL database")
+        print(f"Using Supabase PostgreSQL database")
+    elif os.environ.get('DATABASE_URL'):
+        # Fallback to Render PostgreSQL database URL if available
         database_url = os.environ.get('DATABASE_URL')
         # Render uses postgres:// but SQLAlchemy requires postgresql://
         if database_url.startswith('postgres://'):
@@ -45,8 +59,8 @@ try:
 
         # Set the database URI to the PostgreSQL URL
         app.config['SQLALCHEMY_DATABASE_URI'] = database_url
-        logger.info(f"Using PostgreSQL database with URL: {database_url.split('@')[0]}@...")
-        print(f"Using PostgreSQL database with URL: {database_url.split('@')[0]}@...")
+        logger.info(f"Using Render PostgreSQL database")
+        print(f"Using Render PostgreSQL database")
     else:
         # Local development - use SQLite
         db_dir = os.path.abspath(os.path.dirname(__file__))
@@ -60,10 +74,10 @@ try:
         app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
 
     # Enable SQLAlchemy echo for debugging
-    app.config['SQLALCHEMY_ECHO'] = True
+    app.config['SQLALCHEMY_ECHO'] = os.environ.get('SQLALCHEMY_ECHO', 'false').lower() == 'true'
 
     # Set connection pool options - different for PostgreSQL and SQLite
-    if os.environ.get('DATABASE_URL'):
+    if 'postgresql' in app.config['SQLALCHEMY_DATABASE_URI']:
         # PostgreSQL-specific options
         app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
             'pool_timeout': 60,
@@ -82,6 +96,18 @@ try:
 
     # Disable track modifications to improve performance
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+    # Log the database connection details
+    db_url = app.config['SQLALCHEMY_DATABASE_URI']
+    masked_url = db_url
+    if '@' in db_url:
+        # Mask the password in the URL for logging
+        parts = db_url.split('@')
+        auth_parts = parts[0].split(':')
+        if len(auth_parts) >= 3:
+            masked_url = f"{auth_parts[0]}:{auth_parts[1]}:****@{parts[1]}"
+
+    logger.info(f"Database URL: {masked_url}")
 
 except Exception as e:
     logger.error(f"Error configuring database: {e}")
