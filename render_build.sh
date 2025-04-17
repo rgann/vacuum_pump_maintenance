@@ -9,10 +9,11 @@ echo "Build phase started..."
 
 # Print environment variables (without sensitive values)
 echo "RENDER environment variable: $RENDER"
-echo "DATABASE_URL exists: $(if [ -n "$DATABASE_URL" ]; then echo "yes"; else echo "no"; fi)"
+echo "SUPABASE_URL exists: $(if [ -n "$SUPABASE_URL" ]; then echo "yes"; else echo "no"; fi)"
+echo "SUPABASE_DB_HOST exists: $(if [ -n "$SUPABASE_DB_HOST" ]; then echo "yes"; else echo "no"; fi)"
 
-# We don't initialize the database here anymore
-# Database initialization happens in initialDeployHook in render.yaml
-echo "Database will be initialized after deployment using seed_initial_data.py data"
+# We're using Supabase for the database
+# The database is already set up and populated
+echo "Using Supabase database - no initialization needed during build"
 
 echo "Build phase completed successfully!"
