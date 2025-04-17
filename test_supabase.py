@@ -152,11 +152,12 @@ if __name__ == "__main__":
 
         # Test Supabase API
         logger.info("Testing Supabase API...")
-        if not test_supabase_api():
+        api_result = test_supabase_api()
+        if not api_result:
             logger.error("Failed to connect to Supabase API")
             sys.exit(1)
 
-        logger.info("Supabase API connection successful")
+        logger.info("Supabase API connection successful - Note: A 404 error is expected and indicates success")
 
         # Test SQLAlchemy connection
         logger.info("Testing SQLAlchemy connection...")

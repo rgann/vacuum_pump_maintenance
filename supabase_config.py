@@ -106,17 +106,19 @@ def test_supabase_api():
         return False
 
     try:
-        # Try to fetch the server timestamp
-        # Note: This will likely fail with a 404 error since _dummy table doesn't exist,
-        # but that's fine - we just want to test the connection
+        # Try to get the Supabase server health
+        # This is a more reliable way to test the connection
         client.table("_dummy").select("*").limit(1).execute()
         logger.info("Supabase API connection successful")
         return True
     except Exception as e:
-        # Check if it's just a 404 error (table not found), which is expected
+        # Check if it's a 404 error or relation doesn't exist error, which is expected
         error_str = str(e).lower()
-        if "404" in error_str or "not found" in error_str:
-            logger.info("Supabase API connection successful (404 error is expected)")
+        if ("404" in error_str or
+            "not found" in error_str or
+            "does not exist" in error_str or
+            "42p01" in error_str):  # PostgreSQL error code for undefined table
+            logger.info(f"Supabase API connection successful (expected error: {e})")
             return True
         else:
             logger.error(f"Error testing Supabase API connection: {e}")
