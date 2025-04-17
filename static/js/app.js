@@ -1,48 +1,4 @@
-// Centralized theme colors
-const themeColors = {
-    // Base neon colors
-    neonBlue: 'rgba(123, 147, 255, 1)',
-    neonGreen: 'rgba(124, 255, 203, 1)',
-    neonPink: 'rgba(255, 123, 209, 1)',
-    neonPurple: 'rgba(203, 123, 255, 1)',
-    neonYellow: 'rgba(255, 240, 123, 1)',
-    neonCyan: 'rgba(123, 233, 255, 1)',
-    neonRed: 'rgba(255, 123, 123, 1)',
-    neonMint: 'rgba(123, 255, 168, 1)',
-    neonIndigo: 'rgba(168, 123, 255, 1)',
-    neonOrange: 'rgba(255, 185, 123, 1)',
-    neonTurquoise: 'rgba(123, 255, 255, 1)',
-    neonRose: 'rgba(255, 123, 166, 1)',
-    neonLime: 'rgba(206, 255, 123, 1)',
-    neonMagenta: 'rgba(255, 123, 246, 1)',
-
-    // Helper function to get transparent versions
-    getAlphaVersion: (color, alpha) => {
-        return color.replace(/[\d.]+(?=\))/g, alpha.toFixed(2));
-    },
-
-    // Get an array of neon colors for charts
-    getNeonPalette: (count = 10) => {
-        const palette = [
-            'rgba(123, 147, 255, 1)',  // neon blue
-            'rgba(124, 255, 203, 1)',  // neon green
-            'rgba(255, 123, 209, 1)',  // neon pink
-            'rgba(203, 123, 255, 1)',  // neon purple
-            'rgba(255, 240, 123, 1)',  // neon yellow
-            'rgba(123, 233, 255, 1)',  // neon cyan
-            'rgba(255, 123, 123, 1)',  // neon red
-            'rgba(123, 255, 168, 1)',  // neon mint
-            'rgba(168, 123, 255, 1)',  // neon indigo
-            'rgba(255, 185, 123, 1)',  // neon orange
-            'rgba(123, 255, 255, 1)',  // neon turquoise
-            'rgba(255, 123, 166, 1)',  // neon rose
-            'rgba(206, 255, 123, 1)',  // neon lime
-            'rgba(255, 123, 246, 1)',  // neon magenta
-            'rgba(123, 255, 123, 1)'   // neon bright green
-        ];
-        return palette.slice(0, count);
-    }
-};
+// Using themeColors from theme_colors.js
 
 class ChartUtilities {
     static getDefaultConfig() {
