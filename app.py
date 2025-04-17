@@ -466,7 +466,6 @@ def restore_db_route(filename):
         }), 500
 
 # Schedule automatic backups
-@app.before_first_request
 def setup_scheduled_tasks():
     """Set up scheduled tasks that run in the background"""
     try:
@@ -522,6 +521,16 @@ def setup_scheduled_tasks():
         logger.info("Scheduled backup thread started")
     except Exception as e:
         logger.error(f"Error setting up scheduled tasks: {e}")
+
+# Create a function to initialize the app
+def init_app(app):
+    """Initialize the application"""
+    # Set up scheduled tasks
+    setup_scheduled_tasks()
+
+# Register the init_app function with Flask 2.0+ using the new approach
+with app.app_context():
+    init_app(app)
 
 @app.route('/emergency-db-init')
 def emergency_db_init():

@@ -24,7 +24,6 @@ load_dotenv()
 from supabase_config import (
     get_db_connection_string,
     test_db_connection,
-    get_supabase_client,
     test_supabase_api,
     SUPABASE_URL,
     SUPABASE_KEY,
@@ -131,13 +130,14 @@ def test_sqlalchemy_connection():
         logger.error(f"Error testing SQLAlchemy connection: {e}")
         return False
 
-if __name__ == "__main__":
+def run_tests():
+    """Run all Supabase connection tests"""
     try:
         logger.info("Testing Supabase connection...")
 
         # Check environment variables
         if not check_environment_variables():
-            sys.exit(1)
+            return False
 
         # Print connection information
         print_connection_info()
@@ -146,7 +146,7 @@ if __name__ == "__main__":
         logger.info("Testing database connection...")
         if not test_db_connection():
             logger.error("Failed to connect to Supabase database")
-            sys.exit(1)
+            return False
 
         logger.info("Database connection successful")
 
@@ -155,7 +155,7 @@ if __name__ == "__main__":
         api_result = test_supabase_api()
         if not api_result:
             logger.error("Failed to connect to Supabase API")
-            sys.exit(1)
+            return False
 
         logger.info("Supabase API connection successful - Note: A 404 error is expected and indicates success")
 
@@ -163,12 +163,32 @@ if __name__ == "__main__":
         logger.info("Testing SQLAlchemy connection...")
         if not test_sqlalchemy_connection():
             logger.error("Failed to connect to Supabase using SQLAlchemy")
-            sys.exit(1)
+            return False
 
         logger.info("SQLAlchemy connection successful")
 
         logger.info("All Supabase connection tests passed!")
-        sys.exit(0)
+        return True
     except Exception as e:
         logger.error(f"Unexpected error during Supabase connection test: {e}")
+        return False
+
+if __name__ == "__main__":
+    # Import Flask app only if running as main script
+    from app import app
+
+    # Run tests within a Flask application context if needed
+    try:
+        # First try without app context for API and basic tests
+        success = run_tests()
+
+        if not success:
+            # If tests fail, try again with app context
+            logger.info("Retrying tests with Flask application context...")
+            with app.app_context():
+                success = run_tests()
+
+        sys.exit(0 if success else 1)
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
         sys.exit(1)
