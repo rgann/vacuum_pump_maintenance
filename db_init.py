@@ -42,12 +42,16 @@ def create_sample_data():
             print("Database already contains data. Skipping initialization.")
             return
 
-        # Clear any existing data
-        MaintenanceLog.query.delete()
-        Equipment.query.delete()
-        db.session.commit()
-        logger.info("Existing data cleared successfully.")
-        print("Existing data cleared successfully.")
+        # We only clear data if there's partial data (some tables have data but others don't)
+        # This is a safety measure to avoid accidentally clearing data
+        maintenance_count = MaintenanceLog.query.count()
+        if maintenance_count > 0 and equipment_count == 0:
+            logger.info(f"Found {maintenance_count} maintenance logs but no equipment. Clearing partial data.")
+            print(f"Found {maintenance_count} maintenance logs but no equipment. Clearing partial data.")
+            MaintenanceLog.query.delete()
+            db.session.commit()
+            logger.info("Partial data cleared successfully.")
+            print("Partial data cleared successfully.")
 
         # Add equipment from seed_initial_data.py
         for num, name, model, oil, owner, status, notes in equipment_data:

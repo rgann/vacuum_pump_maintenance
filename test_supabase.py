@@ -67,6 +67,13 @@ def check_environment_variables():
         logger.error(f"Missing required environment variables: {', '.join(missing_vars)}")
         return False
 
+    # Check if SUPABASE_DB_HOST is in the correct format
+    host = env_vars["SUPABASE_DB_HOST"]
+    if '://' in host:
+        logger.warning(f"SUPABASE_DB_HOST appears to be a full connection string, not just a hostname.")
+        logger.warning(f"It should be just the hostname part (e.g., 'db.ziklxqccdmznzopgzpao.supabase.co')")
+        logger.warning(f"The code will attempt to extract the hostname, but it's better to fix your .env file.")
+
     # Check port specifically
     port_str = env_vars["SUPABASE_DB_PORT"]
     if port_str:

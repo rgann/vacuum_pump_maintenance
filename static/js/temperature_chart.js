@@ -1,7 +1,3 @@
-/**
- * Enhanced Temperature Chart with Unique Colors
- */
-
 // Register a custom plugin for rounded corners on doughnut charts
 Chart.register({
     id: 'roundedDoughnut',
@@ -13,24 +9,18 @@ Chart.register({
         const ctx = chart.ctx;
         ctx.save();
 
-        // Add glow effect
         ctx.shadowColor = 'rgba(255, 255, 255, 0.5)';
         ctx.shadowBlur = 15;
-
-        // Just add the glow effect, the rounded corners are handled by the chart options
 
         ctx.restore();
     }
 });
 function generateUniqueNeonColors(count) {
-    // Use the centralized color palette from themeColors
     const neonColors = themeColors.getNeonPalette(count);
 
-    // If we need more colors than available
     if (count > neonColors.length) {
-        // Generate additional colors by shifting hue
         for (let i = neonColors.length; i < count; i++) {
-            const hue = (i * 137) % 360; // Use golden ratio to distribute hues
+            const hue = (i * 137) % 360;
             const color = `hsl(${hue}, 100%, 70%)`;
             neonColors.push(color);
         }
@@ -39,7 +29,6 @@ function generateUniqueNeonColors(count) {
     return neonColors.slice(0, count);
 }
 
-// Setup temperature chart with glowing effects
 function setupTemperatureChart(data) {
     const tempCtx = document.getElementById('temperatureChart').getContext('2d');
     const legendContainer = document.getElementById('tempChartLegend');
@@ -47,37 +36,30 @@ function setupTemperatureChart(data) {
 
     if (!tempCtx || !legendContainer || !equipmentFiltersContainer) return;
 
-    // Extract equipment names
     const datasets = data.temperature_chart.datasets;
     const equipmentNames = datasets.map(dataset => dataset.label);
 
-    // Generate unique color scheme
     const uniqueColors = generateUniqueNeonColors(datasets.length);
 
-    // Apply unique colors to datasets
     datasets.forEach((dataset, index) => {
         const color = uniqueColors[index];
         dataset.borderColor = color;
         dataset.borderWidth = 2;
         dataset.pointRadius = 4;
         dataset.pointHoverRadius = 6;
-        dataset.tension = 0.4; // Smooth lines
+        dataset.tension = 0.4; 
 
-        // Apply glow effect with transparent background
         const glowColor = color.replace('1)', '0.2)');
         dataset.backgroundColor = glowColor;
 
-        // Custom point styles with glow
         dataset.pointBackgroundColor = color;
         dataset.pointBorderColor = '#121212';
         dataset.pointBorderWidth = 1;
         dataset.pointHitRadius = 1;
 
-        // Add shadow to create glow effect
         dataset.borderWidth = 2.5;
     });
 
-    // Create custom legend items with glow effect
     legendContainer.innerHTML = '';
     equipmentNames.forEach((name, index) => {
         const legendItem = document.createElement('div');
@@ -149,10 +131,10 @@ function setupTemperatureChart(data) {
                     displayColors: true,
                     usePointStyle: true,
                     position: 'average',
-                    xAlign: 'left',  // Always show to the right of the point
+                    xAlign: 'left',
                     yAlign: 'center',
                     caretPadding: 10,
-                    caretSize: 0,    // Hide the caret
+                    caretSize: 0, 
                     callbacks: {
                         label: function(context) {
                             let label = context.dataset.label || '';
@@ -164,8 +146,6 @@ function setupTemperatureChart(data) {
                             }
                             return label;
                         },
-                        // We'll use a custom sort function in the chart options
-                        // This is just a placeholder
                         afterBody: function() {
                             return '';
                         }
@@ -341,12 +321,12 @@ function setupServiceChart(data) {
                     fullWidth: true,
                     labels: {
                         color: 'rgba(255, 255, 255, 0.87)',
-                        padding: 12, /* Increased padding */
+                        padding: 12, 
                         usePointStyle: true,
-                        boxWidth: 30, /* Increased width */
-                        boxHeight: 12, /* Increased height */
+                        boxWidth: 30, 
+                        boxHeight: 12,
                         font: {
-                            size: 14 /* Increased font size for arcade font */
+                            size: 14
                         },
                         generateLabels: function(chart) {
                             const data = chart.data;
@@ -359,7 +339,6 @@ function setupServiceChart(data) {
                                         lineWidth: 1,
                                         hidden: !chart.getDataVisibility(i),
                                         index: i,
-                                        // Add glow effect to legend points
                                         pointStyle: 'rectRounded',
                                         rotation: 0
                                     };
@@ -394,7 +373,7 @@ function setupServiceChart(data) {
             layout: {
                 padding: {
                     top: 10,
-                    bottom: 60, // Add even more padding at the bottom for larger legend
+                    bottom: 50, // Add even more padding at the bottom for larger legend
                     left: 20,
                     right: 20
                 }

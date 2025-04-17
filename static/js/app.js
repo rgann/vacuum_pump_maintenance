@@ -1,10 +1,4 @@
-/**
- * Vacuum Pump Maintenance App - JavaScript Utilities
- */
-
-/**
- * Centralized color definitions for the entire application
- */
+// Centralized theme colors
 const themeColors = {
     // Base neon colors
     neonBlue: 'rgba(123, 147, 255, 1)',

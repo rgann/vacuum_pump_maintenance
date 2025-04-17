@@ -47,15 +47,34 @@ def get_db_connection_string():
         logger.warning(f"Missing required Supabase database credentials: {', '.join(missing_vars)}")
         return None
 
+    # Extract just the hostname if a full connection string was provided
+    host = SUPABASE_DB_HOST
+    if '://' in host:
+        # This looks like a full connection string, not just a hostname
+        logger.warning(f"SUPABASE_DB_HOST appears to be a full connection string. Attempting to extract hostname.")
+        try:
+            # Try to extract just the hostname part
+            if '@' in host:
+                # Format like: postgresql://user:pass@hostname:port/dbname
+                host = host.split('@')[1].split(':')[0]
+            else:
+                # Format like: hostname:port/dbname
+                host = host.split(':')[0]
+
+            logger.info(f"Extracted hostname from connection string: {host}")
+        except Exception as e:
+            logger.error(f"Failed to extract hostname from connection string: {e}")
+            return None
+
     # Log all connection parameters (except password)
     logger.info(f"Database connection parameters:")
-    logger.info(f"  Host: {SUPABASE_DB_HOST}")
+    logger.info(f"  Host: {host}")
     logger.info(f"  Database: {SUPABASE_DB_NAME}")
     logger.info(f"  User: {SUPABASE_DB_USER}")
     logger.info(f"  Port: {SUPABASE_DB_PORT}")
 
     # Build and return the connection string
-    connection_string = f"postgresql://{SUPABASE_DB_USER}:{SUPABASE_DB_PASSWORD}@{SUPABASE_DB_HOST}:{SUPABASE_DB_PORT}/{SUPABASE_DB_NAME}"
+    connection_string = f"postgresql://{SUPABASE_DB_USER}:{SUPABASE_DB_PASSWORD}@{host}:{SUPABASE_DB_PORT}/{SUPABASE_DB_NAME}"
 
     # Log a masked version of the connection string
     masked_connection = connection_string.replace(SUPABASE_DB_PASSWORD, "****")
