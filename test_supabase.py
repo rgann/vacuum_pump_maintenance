@@ -109,14 +109,21 @@ def test_sqlalchemy_connection():
 
         # Test connection
         import sqlalchemy
+        from sqlalchemy import text
+
+        logger.info(f"Creating SQLAlchemy engine with connection string: {connection_string.replace(os.getenv('SUPABASE_DB_PASSWORD', ''), '****')}")
         engine = sqlalchemy.create_engine(connection_string)
+
+        logger.info("Connecting to database...")
         with engine.connect() as connection:
             # Try to execute a simple query
-            result = connection.execute("SELECT 1").scalar()
+            logger.info("Executing SELECT 1 query...")
+            result = connection.execute(text("SELECT 1")).scalar()
             logger.info(f"SQLAlchemy connection test result: {result}")
 
             # Try to get database version
-            version = connection.execute("SELECT version()").scalar()
+            logger.info("Executing SELECT version() query...")
+            version = connection.execute(text("SELECT version()")).scalar()
             logger.info(f"Database version: {version}")
 
             return True

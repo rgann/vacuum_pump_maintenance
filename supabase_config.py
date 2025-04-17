@@ -80,6 +80,7 @@ def get_supabase_client() -> Client:
 def test_db_connection():
     """Test the database connection"""
     import sqlalchemy
+    from sqlalchemy import text
 
     connection_string = get_db_connection_string()
     if not connection_string:
@@ -88,7 +89,9 @@ def test_db_connection():
     try:
         engine = sqlalchemy.create_engine(connection_string)
         with engine.connect() as connection:
-            result = connection.execute("SELECT 1").scalar()
+            # Use SQLAlchemy text() to create a proper SQL expression
+            result = connection.execute(text("SELECT 1")).scalar()
+            logger.info(f"Database connection test result: {result}")
             return result == 1
     except Exception as e:
         logger.error(f"Error testing database connection: {e}")
