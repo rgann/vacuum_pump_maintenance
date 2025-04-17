@@ -26,18 +26,18 @@
             </button>
             <div class="d-flex ms-auto">
                 {% if current_user.is_authenticated %}
-                <div class="dropdown">
-                    <button class="btn btn-dark dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                <div class="d-flex align-items-center">
+                    <span class="me-2 user-name">
                         {% if current_user.picture %}
                         <img src="{{ current_user.picture }}" alt="{{ current_user.name }}" class="rounded-circle" width="24" height="24">
                         {% else %}
                         <i class="bi bi-person-circle"></i>
                         {% endif %}
                         {{ current_user.name }}
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                        <li><a class="dropdown-item" href="{{ url_for('logout') }}"><i class="bi bi-box-arrow-right"></i> Logout</a></li>
-                    </ul>
+                    </span>
+                    <a href="{{ url_for('logout') }}" class="btn btn-danger btn-sm logout-btn">
+                        <i class="bi bi-box-arrow-right"></i> Logout
+                    </a>
                 </div>
                 {% else %}
                 <a href="{{ url_for('login') }}" class="btn btn-outline-light"><i class="bi bi-box-arrow-in-right"></i> Login</a>

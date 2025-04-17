@@ -86,6 +86,36 @@ h1, h2, h3, h4 {
     height: 46px; /* Reduced height */
 }
 
+/* User name and logout button */
+.user-name {
+    color: var(--neon-blue);
+    text-shadow: 0 0 5px rgba(123, 147, 255, 0.5);
+    font-size: 0.7rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 120px;
+}
+
+.logout-btn {
+    background-color: #ff4d4d;
+    border-color: #ff4d4d;
+    color: white;
+    font-size: 0.7rem !important;
+    padding: 0.25rem 0.5rem;
+    box-shadow: 0 0 8px rgba(255, 77, 77, 0.6);
+    transition: all 0.3s ease;
+    position: relative;
+    z-index: 1000;
+}
+
+.logout-btn:hover {
+    background-color: #ff3333;
+    border-color: #ff3333;
+    box-shadow: 0 0 12px rgba(255, 77, 77, 0.8);
+    transform: translateY(-2px);
+}
+
 .navbar-brand {
     color: var(--neon-blue) !important;
     font-weight: 600;
